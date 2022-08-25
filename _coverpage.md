@@ -2,6 +2,8 @@
 <img src="https://docsify.js.org/_media/icon.svg" style="width: 400px;height: 400px">
 
 
-> 一个自己的专属Code笔记本。
+> My Code Note
+
+>By_杜嘟嘟
 
 [----↓----](#docsify)
