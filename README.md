@@ -227,7 +227,7 @@ public String funnction_name(@RequestBody(required=true) 操作对象类型 操�
 List<类型> applyTypeList = list.stream().map(实体类 :: 条件).distinct().collect(Collectors.toList());
 ```
 
->从List集合中去除元素
+>从List集合中去除元素(会修改List)
 
 ```
 BoList.removeIf(e -> Strings.isNullOrEmpty(e.getProjectCode()));
@@ -241,7 +241,7 @@ BoList.removeIf(e -> Strings.isNullOrEmpty(e.getProjectCode()));
 List<PlanAppraiseBo> sortList = value.stream().sorted(Comparator.comparing(PlanAppraiseBo::getProjectCode).reversed()).collect(Collectors.toList());
 ```
 
->List集合过滤
+>List集合过滤(不修改List)
 
 ```
   private List<Integer> integers = Lists.list(30, 40, 10, 20);
@@ -259,7 +259,13 @@ List<PlanAppraiseBo> sortList = value.stream().sorted(Comparator.comparing(PlanA
 ```
 Map<类型, List<类型>> map1 = List1.stream().collect(Collectors.groupingBy(实体类 :: 条件属性));
 ```
- 
+>将List根据条件转换为Map
+
+```
+Map<String, 实体类> voteMap  = allVoteList.stream().collect(Collectors.toMap(实体::条件, item -> item));
+```
+
+
 >Map集合遍历
 
 ```
@@ -284,6 +290,12 @@ String S1 = S2.substring(S2.length() - 保留位数);
 ```
 // 0 - 补充数； 3 - 补充位数； d - 实数；
 String.format("%03d",num)     
+```
+
+>equals
+
+```
+常量.equals(变量)    //防止出现空指针异常
 ```
  
 ## 实体类
