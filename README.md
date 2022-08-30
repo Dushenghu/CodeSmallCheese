@@ -67,6 +67,34 @@ public String funnction_name(@RequestBody(required=true) 操作对象类型 操�
 >@Resource  &  @AutoWired : @Autowired注入的时候要确保只有一个实现类 
 
 
+## PageHelper(分页插件)
+
+>官方说明文档：https://pagehelper.github.io/
+
+### 依赖
+```
+        <!-- pagehelper -->
+<dependency>
+	<groupId>com.github.pagehelper</groupId>
+	<artifactId>pagehelper-spring-boot-starter</artifactId>
+	<version>1.2.13</version>
+</dependency>
+```
+### 调用
+
+```
+PageInfo<实体类> pageInfo = XXXService.findPage方法(对象);
+
+findPage方法(对象){
+    int page = record.getPage();
+    int rows = record.getRows();
+
+    PageHelper.startPage(page,rows);
+    List<实体类> 查询对象集合 = XXXMapper.查询方法(对象);
+    return new PageInfo<>(查询对象集合);
+}
+```
+
 
 # SQL 小芝士
 
@@ -297,7 +325,48 @@ String.format("%03d",num)
 ```
 常量.equals(变量)    //防止出现空指针异常
 ```
- 
+
+>字符串划分
+
+:star2:  split()
+
+``` 
+//语法 (regex - 正则表达式分隔符；limit - 分割的份数)
+ public String[] split(String regex, int limit)
+```
+
+:star2: indexOf()
+
+```
+//形式：
+
+//返回指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
+public int indexOf(int ch)
+
+//返回从 fromIndex 位置开始查找指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
+public int indexOf(int ch, int fromIndex) 
+
+//返回指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
+int indexOf(String str)
+
+//返回从 fromIndex 位置开始查找指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
+int indexOf(String str, int fromIndex)
+
+//语法:
+ch - 字符，Unicode 编码;
+fromIndex - 开始搜索的索引位置，初始为0;
+str -- 要搜索的子字符串。
+
+public int indexOf(int ch )
+
+public int indexOf(int ch, int fromIndex)
+
+int indexOf(String str)
+
+int indexOf(String str, int fromIndex)
+
+```
+
 ## 实体类
 
 >BO类 ： 业务类   进行业务设计，extends 实体类
