@@ -5,4 +5,4 @@
 > My Code Note
 >By_杜嘟嘟
 
-[----↓----](#:pushpin:杂记)
+[----↓----](#pushpin杂记)
