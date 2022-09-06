@@ -300,6 +300,13 @@ public class UuidUtil {
 >@Resource  &  @AutoWired : @Autowired注入的时候要确保只有一个实现类 
 
 
+
+##  :leaves:SpringCloud 微服务
+
+> 学习网站（CSDN） https://blog.csdn.net/weixin_38007185/article/details/108186254
+
+
+
 ## :page_with_curl:PageHelper(分页插件)
 
 >官方说明文档：https://pagehelper.github.io/
