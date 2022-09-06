@@ -274,7 +274,61 @@ public class UuidUtil {
 
 
 
+## :bookmark_tabs:日志打印工具
 
+### 简介
+
+> SLF4J代表*Simple Logging Facade for Java*。它提供了Java中所有日志框架的简单抽象。因此，它使用户能够使用单个依赖项处理任何日志框架，例如：[Log4j](http://www.yiibai.com/log4j/)，Logback和JUL(`java.util.logging`)。可以在运行时/部署时迁移到所需的日志记录框架。
+
+### 依赖
+
+```xml
+<dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.28</version>
+</dependency>
+```
+
+### 使用
+
+```java
+//Controller层通用异常信息处理类
+public class BaseController {
+	
+	protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+	@Autowired
+	protected CommonUtil commonUtil;
+	
+	/**
+	 * Controller层通用异常信息处理
+	 * @param e
+	 * @return String
+	 */
+	protected String doSimpleEXC(Exception e) {
+		String errMsg = null;
+	
+	    errMsg = e.getMessage();
+		
+		logger.error("通用异常: " + errMsg, e);
+        
+		if (StringUtil.isNotBlank(errMsg)) {
+			return "请求异常:" + errMsg + " & " + e.toString();
+		} else {
+			return "请求异常:" + e.toString();
+		}
+	}
+	
+}
+
+//Controller层调用
+public class XXXXController extends BaseController {
+    public void xxx (Object x){
+        logger.info("控制台日志打印信息:参数[{}]",x);
+    }
+}
+
+```
 
 
 
@@ -295,9 +349,191 @@ public class UuidUtil {
 	</dependency>
 ```
 
-## :leaves:SpringBoot 注解
+## :leaves:SpringBoot 
+
+### 注解
 
 >@Resource  &  @AutoWired : @Autowired注入的时候要确保只有一个实现类 
+
+### 父子项目搭建
+
+> 父POM
+
+``` xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <!-- spring boot 依赖 -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.2.6.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    
+    <!-- 父项目信息  -->
+    <groupId>com.du.parent</groupId>
+    <artifactId>com-du-parent-test</artifactId>
+    <version>1.0.0</version>
+    <name>com-du-parent-test</name>
+    <description>XXXXXXXXX</description>
+ 
+    <packaging>pom</packaging>
+ 	
+    <!-- 子modules -->
+    <modules>
+        <module>spring-boot-child1</module>
+        <module>spring-boot-child2</module>
+        <module>spring-boot-child3</module>
+    </modules>
+ 
+    <!-- 版本控制 -->
+    <properties>
+        <java.version>1.8</java.version>
+    </properties>
+ 	
+    <!-- 依赖 -->
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+ 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+ 
+    <!-- 打包 -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+ 
+</project>
+```
+
+> 子POM
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    
+    <!-- 父项目信息 -->
+    <parent>
+     	<groupId>com.du.parent</groupId>
+    	<artifactId>com-du-parent-test</artifactId>
+    	<version>1.0.0</version>
+    </parent>
+    
+    <!-- 项目信息 -->
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>spring-boot-child1</artifactId>
+    <name>spring-boot-child1</name>
+	
+    <!-- 版本控制 -->
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
+    </properties>
+	
+    <!-- 依赖 -->
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+    </dependencies>
+	
+    <!-- 打包 -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <fork>true</fork>
+                    <layout>ZIP</layout>
+                    <excludeGroupIds>
+
+                    </excludeGroupIds>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+```
+
+### 项目打包
+
+>  POM依赖加载
+
+```xml
+<build>
+		<plugins>
+			<!-- 打包的时候跳过测试junit -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.17</version>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
+			<!-- 打包的时候加入源码 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+</build>
+```
+
+> 打包操作
+
+<img src="https://i.loli.net/2020/09/06/M1owGP85ADXZiaN.png" style="width: 800px;height: 700px">
+
+> 修改打包类型
+
+``` xml
+<!-- 在POM文件中表头部分修改 -->
+<groupId>com.dudu</groupId>
+<artifactId>build-test</artifactId>
+<name>build-test</name>
+<version>1.0.0</version>
+<packaging>jar</packaging>
+
+<!--默认为jar方式-->
+<packaging>jar</packaging>
+
+<!--改为war方式-->
+<packaging>war</packaging>
+```
 
 
 
@@ -312,8 +548,8 @@ public class UuidUtil {
 >官方说明文档：https://pagehelper.github.io/
 
 ### 依赖
-```java
-        <!-- pagehelper -->
+```xml
+<!-- pagehelper -->
 <dependency>
 	<groupId>com.github.pagehelper</groupId>
 	<artifactId>pagehelper-spring-boot-starter</artifactId>
@@ -888,9 +1124,45 @@ int indexOf(String str, int fromIndex)
 
 ## 实体类
 
+### 分类
+
 >BO类 ： 业务类   进行业务设计，extends 实体类
 
->VO类 ： 视图类   显示属性包含的类
+>VO类 ： 视图类   显示属性包含的类 
+
+### 注意事项
+
+1.实体类序列化
+
+> ​	序列化：eg: 将实体对象转化为Json对象；
+>
+> ​	反序列化：eg : 将Json转化为实体对象；
+
+1.1 作用
+
+>控制版本是否兼容
+>
+>若认为修改的 实体对象 是向后兼容的，则不修改 serialVersionUID；反之修改；
+
+1.2 使用
+
+```java
+//方式一
+//根据包名，类名，继承关系，非私有的方法和属性，以及参数，返回值等诸多因子计算得出的，极度复杂生成的一个64位的哈希字段
+private static final long serialVersionUID = -3681388653357478350L;
+```
+
+```java
+//方式二
+//默认的1L
+private static final long serivalVersionUID = 1L;
+```
+
+1.2 自动生成 （IDEA设置）
+
+1）settings  ==>  serializable ==> 勾选 ：Serializable class without 'serialVersionUID'  + 'serialVersionUID' field not declared 'private static final long'
+
+2）设置之后，选中对应的类名，然后按 alt+enter 快捷键  ==>  add 'serialVersionUID' field
 
 ## 线程
 
