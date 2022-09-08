@@ -1122,6 +1122,82 @@ int indexOf(String str, int fromIndex)
 
 ```
 
+
+
+## Lambda 表达式 ( -> )
+
+### 简介
+
+> “强调做什么 而不是以什么形式做”
+
+### 格式
+
+```java
+//标准格式：
+(参数类型 参数名称) ‐> { 代码语句 }
+
+//省略格式：
+可省略的内容：
+1.参数列表：括号中参数列表的数据类型可以省略不写 (因为在接口里已经定义了类型);
+2.参数列表：括号中的参数如果只有一个 那么类型和()都可以省略;
+3.代码：如果{}中的代码只有一行 那么无论是否有返回值 可以省略{}和return和分号(但要省略必须一起省略);
+```
+
+### 使用
+
+> 1. 无参无返回值
+
+```java
+// 调用invokeCook()方法 传递Cook接口的匿名内部类对象
+        invokeCook(new Cook() {
+            @Override
+            public void makeFood() {
+                System.out.println("开饭了");
+            }
+        });
+
+        // 使用Lambda表达式简化匿名内部类的书写
+        invokeCook(() -> {
+            System.out.println("开饭了");
+        });
+```
+
+> 2.有参数有返回值
+
+```java
+实体对象类：
+       // 升序操作
+        Arrays.sort(arr, new Comparator<Person>() {
+            @Override
+            public int compare(Person o1, Person o2) {
+                return o1.getAge()-o2.getAge();
+            }
+        });
+
+        // 使用Lambda表达式简化匿名内部类的书写
+        Arrays.sort(arr,(Person o1, Person o2) -> {
+            return o1.getAge()-o2.getAge();
+        });
+
+计算类：
+     // 调用方法 参数是一个接口 可以使用匿名内部类
+        invokeCalc(1, 2, new Calculate() {
+            @Override
+            public int calc(int a, int b) {
+                return a+b;
+            }
+        });
+
+        // 使用Lambda表达式简化匿名内部类的书写
+        invokeCalc(1,2,(int a,int b) -> {
+            return a+b;
+        });
+```
+
+
+
+
+
 ## 实体类
 
 ### 分类
