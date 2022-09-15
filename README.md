@@ -4,6 +4,15 @@
 
 > 他人总结的杂七杂八 ： https://www.cnblogs.com/cao-lei/
 
+##  :gun:  easyTools工具包
+### 简介
+> 自己搞的小工具包 
+
+### 仓库
+> [jar包仓库](https://github.com/Dushenghu/easyTools.git)  :  github ==> easyTools ==> jar(package) 
+
+
+
 ## :dart:Swagger
 
 ### 简介：请求数据接口(APi) 
