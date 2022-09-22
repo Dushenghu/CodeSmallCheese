@@ -862,6 +862,29 @@ private void exportExcel (List<类型> 数据List,HttpServletRequest request, Ht
 
 # :floppy_disk:SQL 小芝士
 
+## 查询字段的使用
+> 通过Java操作字段，完成对XML查询条件的限制
+
+   1.当实体对象使用 @Table(name="数据库表名") 绑定时，使用 @Transient 忽略字段
+
+2. 设置  noBageRange 字段、orderField 字段、orderType字段（举例）；
+
+3. 对 noBageRange、orderType  进行操作：如 ，noBageRange = “ 3”；orderField = " ISNULL(限制条件),限制条件"; orderType =" desc";
+
+4. XML文件使用字段进行查询限制：
+
+   ```sql
+   <if test="model.noBageRange != null and !''.equals(model.noBageRange)">
+                   and range < #{model.noBageRange}
+   </if>
+   
+   <if test="model.orderField != null and !''.equals(model.orderField)">
+               ${model.orderField} ${model.orderType},
+   </if>
+   ```
+
+   
+
 
 ## XML文件查询条件
 
