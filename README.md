@@ -659,7 +659,9 @@ public class CodeController {
  <img src="/kaptcha" title="看不清，点击换一张！"onclick="this.src='/kaptcha?d='+new Date().getTime()" id="img">
 ```
 
-## :chart_with_upwards_trend:基于POI的Excel导出
+## :chart_with_upwards_trend:基于POI的文件导出
+
+## Excel
 
 ### 依赖    	
 
@@ -855,6 +857,40 @@ private void exportExcel (List<类型> 数据List,HttpServletRequest request, Ht
     
 }
 ```
+
+## Word
+
+### 根据Word模板导出
+
+>  查看 Github ==> easyTools工具包 
+
+## PDF
+
+> 基于 itextpdf 导出
+
+### 依赖
+
+```xml
+  <dependency>
+      <groupId>com.itextpdf</groupId>
+      <artifactId>itextpdf</artifactId>
+      <version>5.5.13.3</version>
+  </dependency>
+      
+  <dependency>
+      <groupId>com.itextpdf</groupId>
+      <artifactId>itext-asian</artifactId>
+      <version>5.2.0</version>
+  </dependency>
+```
+
+### 使用介绍
+
+> 官方文档： https://kb.itextpdf.com/home/it7kb/ebooks
+
+> 别人的说明：https://www.cnblogs.com/ssslinppp/p/4976922.html
+
+
 
 
 
