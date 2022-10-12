@@ -1130,12 +1130,39 @@ Map<String, 实体类> voteMap  = allVoteList.stream().collect(Collectors.toMap(
 >Map集合遍历
 
 ```java
-   for (Map.Entry<类1, List<类2>> entry : map集合.entrySet()) {
+ //推荐
+for (Map.Entry<类1, List<类2>> entry : map集合.entrySet()) {
 
      List<类2> value = entry.getValue();
 
-   }
+}
 ```
+
+```java
+ //Map集合循环遍历二  通过迭代器的方式
+  Iterator<Entry<String, Object>> it = map.entrySet().iterator();
+       while(it.hasNext()){
+          Entry<String, Object> entry = it.next();
+           System.out.println("key:"+entry.getKey()+"  key:"+entry.getValue());
+       }
+
+```
+
+```java
+ //keySet获取map集合key的集合  然后在遍历key
+for(String key:map.keySet()){
+                String value = map.get(key).toString();//
+                System.out.println("key:"+key+" vlaue:"+value);
+}
+```
+
+```java
+//通过Map.values()遍历所有的value，但不能遍历key
+        for(Object m:map.values()){
+          System.out.println(m);
+        }
+```
+
 
 
 ## String 字符串
