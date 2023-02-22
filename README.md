@@ -563,6 +563,35 @@ public class XXXXController extends BaseController {
 <packaging>war</packaging>
 ```
 
+> 导入本地jar包
+
+```xml
+<dependency>
+            <groupId>com.aspose</groupId>
+            <artifactId>aspose-words</artifactId>
+            <version>19.5.0</version>
+            <scope>system</scope>
+        <systemPath>${project.basedir}/src/main/resources/libs/aspose-words-19.5.jar</systemPath>
+</dependency>
+```
+
+>Maven打包时将本地包加入
+
+```xml
+     <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <fork>true</fork>
+                    <layout>ZIP</layout>
+                    <excludeGroupIds>
+
+                    </excludeGroupIds>
+                    <includeSystemScope>true</includeSystemScope>
+                </configuration>
+     </plugin>
+```
+
 
 
 ##  :leaves:SpringCloud 微服务
