@@ -1,19 +1,18 @@
-# :pushpin:杂记
+# 🐵杂记
 
-##  :closed_book:学习资料
+##  📚︎学习资料
 
 > 他人总结的杂七杂八 ： https://www.cnblogs.com/cao-lei/
 
-##  :gun:  easyTools工具包
+##  🧰easyTools工具包
 ### 简介
-> 自己搞的小工具包 
+> 自己搞的小工具包
 
 ### 仓库
 > [jar包仓库](https://github.com/Dushenghu/easyTools.git)  :  github ==> easyTools ==> jar(package) 
 
 
-
-## :dart:Swagger
+## 🕷︎Swagger
 
 ### 简介：请求数据接口(APi) 
 
@@ -69,7 +68,7 @@ public String funnction_name(@RequestBody(required=true) 操作对象类型 操�
 
 -  get	请求指定的页面信息，并返回实体主体
 - post	向指定资源提交数据进行处理请求（例如提交表单或者上传文件）。数据被包含在请求体中。post请求可能会导致新的资源的建立和已有资源的修改。
-- put	从客户端向服务器传送的数据取代指定的文档内容
+- put	       从客户端向服务器传送的数据取代指定的文档内容
 - delete	请求服务器删除指定内容
 - head	类似于get请求，只不过返回的响应中没有具体的内容，用于获取报头
 - options	允许客户端查看服务器的性能
@@ -77,7 +76,7 @@ public String funnction_name(@RequestBody(required=true) 操作对象类型 操�
 - connect	预留给能够连接改为管道方式的代理服务器
 
 
-## :gift:Apache Commons 工具包
+## 🛠Apache Commons 工具包
 
 ### 简介
 
@@ -85,91 +84,91 @@ public String funnction_name(@RequestBody(required=true) 操作对象类型 操�
 >
 > 工具简介：
 >
-> **BeanUtils**
+> ***BeanUtils***
 > Commons-BeanUtils 提供对 Java 反射和自省API的包装
 >
-> **Betwixt**
+> ***Betwixt***
 > Betwixt提供将 JavaBean 映射至 XML 文档，以及相反映射的服务.
 >
-> **Chain**
+> ***Chain***
 > Chain 提供实现组织复杂的处理流程的“责任链模式”.
 >
-> **CLI**
+> ***CLI***
 > CLI 提供针对命令行参数，选项，选项组，强制选项等的简单API.
 >
-> **Codec**
+> ***Codec***
 > Codec 包含一些通用的编码解码算法。包括一些语音编码器， Hex, Base64, 以及URL encoder.
 >
-> **Collections**
+> ***Collections***
 > Commons-Collections 提供一个类包来扩展和增加标准的 Java Collection框架
 >
-> **Configuration**
+> ***Configuration***
 > Commons-Configuration 工具对各种各式的配置和参考文件提供读取帮助.
 >
-> **Daemon**
+> ***Daemon***
 > 一种 unix-daemon-like java 代码的替代机制
 >
-> **DBCP**
+> ***DBCP***
 > Commons-DBCP 提供数据库连接池服务
 >
-> **DbUtils**
+> ***DbUtils***
 > DbUtils 是一个 JDBC helper 类库，完成数据库任务的简单的资源清除代码.
 >
-> **Digester**
+> ***Digester***
 > Commons-Digester 是一个 XML-Java对象的映射工具，用于解析 XML配置文件.
 >
-> **Discovery**
+>***Discovery***
 > Commons-Discovery 提供工具来定位资源 (包括类) ，通过使用各种模式来映射服务/引用名称和资源名称。.
 >
-> **EL**
+> ***EL***
 > Commons-EL 提供在JSP2.0规范中定义的EL表达式的解释器.
 >
-> **FileUpload**
+> ***FileUpload***
 > FileUpload 使得在你可以在应用和Servlet中容易的加入强大和高性能的文件上传能力
 >
-> **HttpClient**
+> ***HttpClient***
 > Commons-HttpClient 提供了可以工作于HTTP协议客户端的一个框架.
 >
-> **IO**
+> ***IO***
 > IO 是一个 I/O 工具集
 >
-> **Jelly**
+> ***Jelly***
 > Jelly是一个基于 XML 的脚本和处理引擎。 Jelly 借鉴了 JSP 定指标签，Velocity, Cocoon和Xdoclet中的脚本引擎的许多优点。Jelly 可以用在命令行， Ant 或者 Servlet之中。
 >
-> **Jexl**
+> ***Jexl***
 > Jexl是一个表达式语言，通过借鉴来自于Velocity的经验扩展了JSTL定义的表达式语言。.
 >
-> **JXPath**
+> ***JXPath***
 > Commons-JXPath 提供了使用Xpath语法操纵符合Java类命名规范的 JavaBeans的工具。也支持 maps, DOM 和其他对象模型。.
 >
-> **Lang**
+> ***Lang***
 > Commons-Lang 提供了许多许多通用的工具类集，提供了一些java.lang中类的扩展功能
 >
-> **Latka**
+> ***Latka***
 > Commons-Latka 是一个HTTP 功能测试包，用于自动化的QA,验收和衰减测试.
 >
-> **Launcher**
+> ***Launcher***
 > Launcher 组件是一个交叉平台的Java 应用载入器。 Commons-launcher 消除了需要批处理或者Shell脚本来载入Java 类。.原始的 Java 类来自于Jakarta Tomcat 4.0 项目
 >
-> **Logging**
+> ***Logging***
 > Commons-Logging 是一个各种 logging API实现的包裹类.
 >
-> **Math**
+> ***Math***
 > Math 是一个轻量的，自包含的数学和统计组件，解决了许多非常通用但没有及时出现在Java标准语言中的实践问题.
 >
-> **Modeler**
+> ***Modeler***
 > Commons-Modeler 提供了建模兼容JMX规范的 Mbean的机制.
 >
-> **Net**
+> ***Net***
 > Net 是一个网络工具集，基于 NetComponents 代码，包括 FTP 客户端等等。
 >
-> **Pool**
+> ***Pool***
 > Commons-Pool 提供了通用对象池接口，一个用于创建模块化对象池的工具包，以及通常的对象池实现.
 >
-> **Primitives**
+> ***Primitives***
 > Commons-Primitives提供了一个更小，更快和更易使用的对Java基本类型的支持。当前主要是针对基本类型的 collection。.
 >
-> **Validator**
+> ***Validator***
 > The commons-validator提供了一个简单的，可扩展的框架来在一个XML文件中定义校验器 (校验方法)和校验规则。支持校验规则的和错误消息的国际化。
 
 ### 依赖
@@ -302,7 +301,7 @@ public class UuidUtil {
 
 
 
-## :bookmark_tabs:日志打印工具
+## 📅日志打印工具
 
 ### 简介
 
@@ -360,7 +359,7 @@ public class XXXXController extends BaseController {
 
 
 
-## :gift:FastJsonUtils 工具类
+## 🔧FastJsonUtils 工具类
 
 ### 简介：Json 返回处理
 
@@ -377,7 +376,7 @@ public class XXXXController extends BaseController {
 	</dependency>
 ```
 
-## :leaves:SpringBoot 
+## 🍃SpringBoot 
 
 ### 注解
 
@@ -594,13 +593,165 @@ public class XXXXController extends BaseController {
 
 
 
-##  :leaves:SpringCloud 微服务
+##  ☘SpringCloud 微服务
+
+### 学习资料
 
 > 学习网站（CSDN） https://blog.csdn.net/weixin_38007185/article/details/108186254
 
 
+## 🌊阿里巴巴Durid连接池
 
-## :page_with_curl:PageHelper(分页插件)
+### 简介
+
+>Druid是什么？
+
+-   Druid首先是一个数据库连接池。Druid是目前最好的数据库连接池，在功能、性能、扩展性方面，都超过其他数据库连接池，包括DBCP、C3P0、BoneCP、Proxool、JBoss DataSource。
+-   Druid是一个JDBC组件，它包括三个部分：
+	1.  基于Filter－Chain模式的插件体系
+	2.  DruidDataSource 高效可管理的数据库连接池
+	3.  SQL Parser
+
+-   Druid支持所有JDBC兼容的数据库，包括Oracle、MySql、Derby、Postgresql、SQL Server、H2等等，并且Druid针对Oracle和MySql做了特别优化，比如Oracle的PS Cache内存占用优化，MySql的ping检测优化。
+-   通过Druid提供的监控功能，监控SQL的执行时间、ResultSet持有时间、返回行数、更新行数、错误次数、错误堆栈信息，可以清楚知道连接池和SQL的工作情况，能够详细统计SQL的执行性能。
+
+> Druid可以做什么？
+
+-   替换DBCP和C3P0。Druid提供了一个高效、功能强大、可扩展性好的数据库连接池。
+-   可以监控数据库访问性能，Druid内置提供了一个功能强大的StatFilter插件，能够详细统计SQL的执行性能，这对于线上分析数据库访问性能有帮助。
+-   数据库密码加密。直接把数据库密码写在配置文件中，这是不好的行为，容易导致安全问题。DruidDriver和DruidDataSource都支持PasswordCallback。
+-   SQL执行日志，Druid提供了不同的LogFilter，能够支持Common-Logging、Log4j和JdkLog，你可以按需要选择相应的LogFilter，监控你应用的数据库访问情况。
+-   扩展JDBC，如果你要对JDBC层有编程的需求，可以通过Druid提供的Filter机制，很方便编写JDBC层的扩展插件。
+
+> 简单理解
+
+   其实质就是种JDBC，事先在内存中建立缓冲池，存放一定数量的连接对象，需要时进行调用，结束时放回缓冲池
+
+### 自定义整合
+
+####  1.引入依赖
+```xml
+			<!--以下为springboot 整合数据库依赖-start --> 
+<!-- alibaba连接池 -->  
+<dependency>  
+    <groupId>com.alibaba</groupId>  
+    <artifactId>druid</artifactId>  
+    <version>1.1.21</version>  
+</dependency>  
+<!-- mysql 数据库驱动 -->  
+<dependency>  
+    <groupId>mysql</groupId>  
+    <artifactId>mysql-connector-java</artifactId>  
+    <scope>runtime</scope>  
+</dependency>  
+<!-- c3p0 -->  
+<dependency>  
+    <groupId>com.mchange</groupId>  
+    <artifactId>mchange-commons-java</artifactId>  
+    <version>0.2.12</version>  
+</dependency>
+```
+
+#### 2.相关配置
+	.properties（.yml）文件
+```yml
+druid.url=jdbc:mysql://127.0.0.1:3306/cctc?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false  
+
+#驱动
+druid.driver-class=com.mysql.jdbc.Driver  
+  
+#root  
+druid.druname=FNUPOovuZr5g+beJnuhGvg==  
+#123456  
+druid.drudwp=D1YrF8XquJC9ox2F5L0JkQ==  
+  
+druid.initial-size=1  
+#最小连接池数量,maxIdle已经废弃  
+druid.min-idle=1  
+#最大连接池数量  
+druid.max-active=30  
+#指明是否在从池中取出连接前进行检验,如果检验失败,则从池中去除连接并尝试取出另一个.  
+druid.test-on-borrow=true
+```
+
+	配置类
+```java
+/**  
+ * @ClassName DruidProperties  
+ * @Description 数据源配置 （获取配置文件相关变量信息)
+ */
+ @ConfigurationProperties(prefix = "druid")  //配置开头
+public class DruidProperties {  
+    private String url;  
+    private String druname;  
+    private String drudwp;  
+    private String driverClass;  
+  
+    private int     maxActive;  
+    private int     minIdle;  
+    private int     initialSize;  
+    private boolean testOnBorrow;  
+
+	...get() and set();
+
+    }
+```
+
+```java
+/**  
+ * @ClassName DruidAutoConfiguration  
+ * @Description 数据源配置   (数据源初始化文件)
+ */
+@Configuration  
+@EnableConfigurationProperties(DruidProperties.class)  
+@ConditionalOnClass(DruidDataSource.class)  //Durid jar 依赖类
+@ConditionalOnProperty(prefix = "druid", name = "url")  
+@AutoConfigureBefore(DataSourceAutoConfiguration.class)  
+public class DruidAutoConfiguration {  
+   private static final Logger logger = LoggerFactory.getLogger(DruidAutoConfiguration.class);  
+  
+   @Autowired  
+   private DruidProperties properties;  
+   @Value("${jdbc.connection.pool:druid}")  
+   private String jdbcPool;  
+  
+   @Bean  
+   public DataSource dataSource() throws PropertyVetoException {  
+      //外网强隔离不支持druid重连，需要使用c3p0  
+      switch (jdbcPool) {  
+      case "c3p0":  
+         System.out.println("USER-ERROR-配置错误,CCTC使用druid连接池!!! ");  
+         logger.error("USER-ERROR-配置错误,CCTC使用druid连接池!!! ");  
+         return null;      default:  
+         DruidDataSource dataSource = new DruidDataSource();  
+         dataSource.setUrl(properties.getUrl());  
+         dataSource.setUsername(properties.getDruname());  
+         dataSource.setPassword(properties.getDrudwp());  
+         dataSource.setDriverClassName(properties.getDriverClass());  
+         if (properties.getInitialSize() > 0) {  
+            dataSource.setInitialSize(properties.getInitialSize());  
+         }  
+         if (properties.getMinIdle() > 0) {  
+            dataSource.setMinIdle(properties.getMinIdle());  
+         }  
+         if (properties.getMaxActive() > 0) {  
+            dataSource.setMaxActive(properties.getMaxActive());  
+         }  
+         dataSource.setTestOnBorrow(properties.isTestOnBorrow());  
+         try {  
+            dataSource.init();  
+         } catch (SQLException e) {  
+            throw new RuntimeException(e);  
+         }  
+         return dataSource;  
+      }  
+         }  
+}
+```
+
+
+
+## 📑PageHelper(分页插件)
 
 >官方说明文档：https://pagehelper.github.io/
 
@@ -628,11 +779,11 @@ findPage方法(对象){
 }
 ```
 
-## :gift:HuTool(Java工具包)
-
+## 🎁HuTool(Java工具包)
+### 说明
 >官方文档  https://hutool.cn/
 
-## :lock:Kaptcha (验证码生成)
+## 🔑Kaptcha (验证码生成)
 
 ### 依赖
 
@@ -707,11 +858,11 @@ public class CodeController {
  <img src="/kaptcha" title="看不清，点击换一张！"onclick="this.src='/kaptcha?d='+new Date().getTime()" id="img">
 ```
 
-## :chart_with_upwards_trend:基于POI的文件导出
+## 📒基于POI的文件导出
 
-## Excel
+### Excel
 
-### 依赖    	
+#### 依赖    	
 
 ```java
 		<dependency>
@@ -721,7 +872,7 @@ public class CodeController {
         </dependency>
 ```
 
-### ExcelUtuls 工具类
+#### ExcelUtuls 工具类
 
 ```java
 Public class ExcelUtils {
@@ -876,7 +1027,7 @@ Public class ExcelUtils {
 }   
 ```
 
-### 业务操作
+#### 业务操作
 
 ```java
 private void exportExcel (List<类型> 数据List,HttpServletRequest request, HttpServletResponse response){
@@ -906,17 +1057,17 @@ private void exportExcel (List<类型> 数据List,HttpServletRequest request, Ht
 }
 ```
 
-## Word
+### Word
 
-### 根据Word模板导出
+#### 根据Word模板导出
 
 >  查看 Github ==> easyTools工具包 
 
-## PDF
+### PDF
 
 > 基于 itextpdf 导出
 
-### 依赖
+#### 依赖
 
 ```xml
   <dependency>
@@ -932,7 +1083,7 @@ private void exportExcel (List<类型> 数据List,HttpServletRequest request, Ht
   </dependency>
 ```
 
-### 使用介绍
+#### 使用介绍
 
 > 官方文档： https://kb.itextpdf.com/home/it7kb/ebooks
 
@@ -944,7 +1095,7 @@ private void exportExcel (List<类型> 数据List,HttpServletRequest request, Ht
 
 
 
-# :floppy_disk:SQL 小芝士
+# 📊SQL 小芝士
 
 ## 查询字段的使用
 > 通过Java操作字段，完成对XML查询条件的限制
@@ -1116,7 +1267,21 @@ private void exportExcel (List<类型> 数据List,HttpServletRequest request, Ht
 <img src="https://www.runoob.com/wp-content/uploads/2019/01/sql-join.png" style="width: 800px;height: 600px">
 
 
-# :coffee:咖啡 小芝士
+
+## SQL 小语法记录
+
+```sql
+//将a字段根据条件b排序后,根据c进行分组并拼接字符d
+
+select  GROUP_CONCAT( a order by b separator 'd')
+	........
+order by c
+```
+
+
+
+
+# ☕咖啡 小芝士
 
 
 
@@ -1125,7 +1290,6 @@ private void exportExcel (List<类型> 数据List,HttpServletRequest request, Ht
 ### 简介
 
 > https://www.cnblogs.com/jyroy/p/11365935.html
-
 
 
 ## List 集合操作
@@ -1157,8 +1321,15 @@ List<PlanAppraiseBo> sortList = value.stream().sorted(Comparator.comparing(PlanA
 
   Set<Integer> collect = integers.stream().filter(i -> i > 20).collect(Collectors.toSet());
 
-  assertEquals(Sets.newTreeSet(30, 40), collect);
+  assertEquals(Sets.newTreeSet(30, 40), collect
+			
+```
 
+> list集合计算某一字段的和
+
+```java
+// BigDecimal类型
+BigDecimal amount = personBonusInfoList.stream().map(PersonBonusInfo :: getAmount).reduce(BigDecimal.ZERO,BigDecimal::add);
 ```
 
 ## Map集合操作
@@ -1395,7 +1566,7 @@ private static final long serivalVersionUID = 1L;
 
 ## 线程
 
-> 线程设置类
+### 线程设置类
 
 ```java
 @Configuration
@@ -1440,8 +1611,6 @@ public class AsyncConfig(){
 ```
 
 
-
-
 >多线程塞入流程相关数据
 
 ```java
@@ -1483,11 +1652,61 @@ designAppraiseAsyncService.addFlowData(designAppraiseBo);
         }catch (Exception e){
             throw new SystemRuntimeException(e.getMessage());
         }
-
-
-
 ```
-# :bookmark_tabs:JUC
+
+## Token、Session与Cookie
+
+### Token
+
+ #### 简介
+ >1、Token的引入： Token是在客户端频繁向服务端请求数据，服务端频繁的去数据库查询用户名和密码并进行对比，判断用户名和密码正确与否，并作出相应提示，在这样的背景下，Token便应运而生。 
+ >2、Token的定义： Token是服务端生成的一串字符串，以作客户端进行请求的一个令牌，当第一次登录后，服务器生成一个Token便将此Token返回给客户端，并存储在客户端，以后客户端只需带上这个Token前来请求数据即可，无需再次带上用户名和密码。 
+ >3、使用Token的目的： Token的目的是为了减轻服务器的压力，减少频繁的查询数据库，使服务器更加健壮。
+ >4.Token 的优点： 扩展性更强，也更安全点，非常适合用在 Web 应用或者移动应用上。Token 的中文有人翻译成 “令牌”，我觉得挺好，意思就是，你拿着这个令牌，才能过一些关卡。
+ >5.Token一般用在三个地方: 
+ > 	①防止表单重复提交 
+ > 	②anti csrf攻击（跨站点请求伪造） 
+          ③身份验证（单点登录）
+
+>组成：
+> 1.第一部分头部（header）：声明加密算法（HMAC -HS256） 
+> 2.第二部分我们称其为载荷（payload )：保存用户的信息 
+> 3.第三部分是签名（signature）：需要base64转码后的header和base64转码后的payload连接组成的字符串，然后通过header中声明的加密方式进行加密。
+![[Pasted image 20230310165247.png]]
+
+
+>鉴权流程:
+>1.用户通过用户名和密码发送请求。 
+>2.程序验证,并返回一个签名的token 给客户端。 
+>3.客户端储存token,并且每次用于每次发送请求。 
+>4.服务端验证token并返回数据。
+![[Pasted image 20230310165027.png]]
+
+>当客户端把这个token发过来的时候，再用同样的HMAC-SHA256算法和同样的密钥，对数据再计算一次签名， 和token中的签名做个比较， 如果相同，就知道客户端已经登录过了，如果不相同，数据部分肯定被人篡改过，则告诉客户端没有认证。
+![[Pasted image 20230310165356.png]]
+
+
+
+### Session
+
+#### 简介
+>session ：就是会话。这个就类似于你和一个人交谈，你怎么知道当前和你交谈的是张三而不是李四呢？对方肯定有某种特征（长相等）表明他就是张三。服务器就要给每个客户端分配不同的“身份标识”，然后客户端每次向服务器发请求的时候，都带上这个“身份标识”，服务器就知道这个请求来自于谁了。至于客户端怎么保存这个“身份标识”，可以有很多种方式，对于浏览器客户端，大家都默认采用 cookie 的方式。
+
+>认证流程：
+![[Pasted image 20230310164815.png]]
+
+
+	区别：cookie数据存放在客户的浏览器上，session数据放在服务器上。将重要信息存放在Session中，其他信息如果需要保留，可以放在cookie中。
+
+
+### Cookie
+
+#### 简介
+>cookie：非常具体的东西，指的就是浏览器里面能永久存储的一种数据，仅仅是浏览器实现的一种数据存储功能。cookie由服务器生成，发送给浏览器，浏览器把cookie以kv形式保存到某个目录下的文本文件内，下一次请求会把该cookie发送给服务器。
+
+
+
+# 🧵JUC
 
 ## 进程
 
@@ -1515,14 +1734,12 @@ designAppraiseAsyncService.addFlowData(designAppraiseBo);
 
 
 
-参考视频：https://www.bilibili.com/video/BV16J411h7Rd
+[B站参考视频](https://www.bilibili.com/video/BV16J411h7Rd/)
 
 笔记的整体结构依据视频编写，并随着学习的深入补充了很多知识
 
 
-
 ***
-
 
 
 ### 对比
@@ -14646,12 +14863,7 @@ final void updateHead(Node<E> h, Node<E> p) {
 ***
 
 
-
-
-
-
-
-# NET
+# 🕸️NET
 
 ## DES
 
@@ -16927,11 +17139,7 @@ public class Client {
 
 
 
-***
-
-
-
-
+****
 
 ## AIO
 
