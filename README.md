@@ -4,6 +4,11 @@
 
 > 他人总结的杂七杂八 ： https://www.cnblogs.com/cao-lei/
 
+> Maven仓库 镜像： https://mvnrepository.com/
+
+> 佐糖在线图片压缩 API ：  https://picwish.cn/image-compression-api
+
+
 ##  🧰easyTools工具包
 ### 简介
 > 自己搞的小工具包
@@ -356,7 +361,6 @@ public class XXXXController extends BaseController {
 }
 
 ```
-
 
 
 ## 🔧FastJsonUtils 工具类
@@ -874,13 +878,44 @@ public class CodeController {
 
 #### ExcelUtuls 工具类
 
+#####  创建 Workbook
+
+```java
+
+	//根据 xlsx or xls 创建不同的 Workbook 对象
+	public static Workbook readExcel(String fileName){
+		Workbook wb = null;
+        if(fileName==null){
+            return null;
+        }
+        String extString = fileName.substring(fileName.lastIndexOf("."));
+        InputStream is = null;
+        try {
+            is = new FileInputStream(fileName);
+            if(".xls".equals(extString)){
+                return wb = new HSSFWorkbook(is);
+            }else if(".xlsx".equals(extString)){
+                return wb = new XSSFWorkbook(is);
+            }
+            
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return wb;
+	}
+	
+```
+
+##### Demo
 ```java
 Public class ExcelUtils {
     
     //公共调用方法
     public static void exportCommon(HttpServletRequest request, HttpServletResponse response,List<Object[]> data)throws IOException{
-            //封装对象属性
-    //        List<Map<String, Object>> list = createExcelRecord(projects, keys);
+    //封装对象属性
+    //List<Map<String, Object>> list = createExcelRecord(projects, keys);
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             try {
                 //将转换成的Workbook对象通过流形式下载
@@ -892,6 +927,8 @@ Public class ExcelUtils {
         	//下载Excel请求
             exportExcel(request,response,os);
     }
+
+======================================================================
     
     //创建工作簿方法
     private static Workbook createCommonWorkBook(List<Object[]> data) {
@@ -991,6 +1028,8 @@ Public class ExcelUtils {
         return wb;
     }
     
+======================================================================
+    
     //下载Excel请求
     public static void exportExcel(HttpServletRequest request, HttpServletResponse response, ByteArrayOutputStream os) throws IOException {
 
@@ -1000,7 +1039,7 @@ Public class ExcelUtils {
         // 设置response参数，可以打开下载页面
         response.reset();
         response.setContentType("application/vnd.ms-excel;charset=utf-8");
-//      response.setHeader("Content-Disposition", "attachment;filename=" + encodeFileName(fileName, request));
+// response.setHeader("Content-Disposition", "attachment;filename=" + encodeFileName(fileName, request));
         ServletOutputStream out = response.getOutputStream();
         BufferedInputStream bis = null;
         BufferedOutputStream bos = null;
@@ -1023,8 +1062,10 @@ Public class ExcelUtils {
             }
         }
     }
-    
+
+======================================================================
 }   
+
 ```
 
 #### 业务操作
@@ -1091,8 +1132,45 @@ private void exportExcel (List<类型> 数据List,HttpServletRequest request, Ht
 
 
 
+### 文件下载（response封装）
+#### 代码
+```java
+/**  
+ * 文件下载  
+ *  
+ * @param response  
+ * @param fileName 
+ * @param inputStream
+ * @throws IOException 
+ */
+public static void downloadFile(HttpServletResponse response, String fileName, InputStream inputStream)  
+        throws IOException { 
+         
+    //请求编辑
+    fileName = java.net.URLEncoder.encode(fileName, "UTF-8");  
+    response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");  
+    response.setHeader("cache-control", "public");  
+    response.setHeader("Pragma", "public");  
+    response.setContentType("application/x-msdownload;charset=UTF-8");  
+    
+    //文件流写入
+    ServletOutputStream servletOutputStream = response.getOutputStream();  
+    byte[] b = new byte[1024];  
+    int i = 0;  
+    while ((i = inputStream.read(b)) > 0) {  
+        servletOutputStream.write(b, 0, i);  
+    }  
+	
+	//流的关闭
+    servletOutputStream.flush();  
+    servletOutputStream.close();  
+    inputStream.close();  
+}
+```
 
 
+
+****
 
 
 # 📊SQL 小芝士
@@ -1294,6 +1372,8 @@ order by c
 
 ## List 集合操作
 
+> 整理 list map  --->  steam  collect  map
+
 >将目标List集合分组
 
 ```java
@@ -1383,8 +1463,9 @@ for(String key:map.keySet()){
 ```
 
 
+## 数据类型的相关处理
 
-## String 字符串
+### String 字符串
 
 >字符串截取
 
@@ -1446,7 +1527,17 @@ int indexOf(String str, int fromIndex)
 
 ```
 
-
+### BigDecimal
+```java
+	// 计算某一bigDecimal属性和
+	BigDecimal sum = personBonusList.stream().map(e -> {  
+    if (null == e.getAmountCount()) {  
+        return BigDecimal.ZERO;  
+    } else {  
+        return e.getAmountCount();  
+    }  
+}).reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2,BigDecimal.ROUND_HALF_UP);
+```
 
 ## Lambda 表达式 ( -> )
 
@@ -16196,17 +16287,13 @@ NIO 和 BIO 的比较：
 
 * BIO 基于字节流和字符流进行操作，而 NIO 基于 Channel 和 Buffer 进行操作，数据从通道读取到缓冲区中，或者从缓冲区写入到通道中。Selector 用于监听多个通道的事件（比如：连接请求，数据到达等），因此使用单个线程就可以监听多个客户端通道
 
-  | NIO                       | BIO                 |
-  | ------------------------- | ------------------- |
-  | 面向缓冲区（Buffer）      | 面向流（Stream）    |
-  | 非阻塞（Non Blocking IO） | 阻塞IO(Blocking IO) |
-  | 选择器（Selectors）       |                     |
-
-
+| NIO                                               | BIO                                             |
+| ------------------------------------------------- | ----------------------------------------------- |
+| 面向缓冲区（Buffer）                                | 面向流（Stream）   |
+| 非阻塞（Non Blocking IO）                           | 阻塞IO(Blocking IO)                   |
+| 选择器（Selectors）               |         |
 
 ***
-
-
 
 ### 实现原理
 
@@ -16955,19 +17042,19 @@ public class ChannelTest {
 | public abstract int select(long timeout)         | **阻塞**等待 timeout 毫秒                   |
 | public abstract int selectNow()                  | 获取一下，**不阻塞**，立刻返回              |
 | public abstract Selector wakeup()                | 唤醒正在阻塞的 selector                     |
-| public abstract Set<SelectionKey> selectedKeys() | 返回此选择器的选择键集                      |
+| public abstract Set<SelectionKey> selectedKeys() | 返回此选择器的选择键集                      
 
 SelectionKey API:
 
-| 方法                                        | 说明                                               |
-| ------------------------------------------- | -------------------------------------------------- |
-| public abstract void cancel()               | 取消该键的通道与其选择器的注册                     |
+| 方法                                        | 说明                                               
+| ------------------------------------------- | ---------------------------------|
+| public abstract void cancel()               | 取消该键的通道与其选择器的注册                   
 | public abstract SelectableChannel channel() | 返回创建此键的通道，该方法在取消键之后仍将返回通道 |
 | public final Object attachment()            | 返回当前 key 关联的附件                            |
 | public final boolean isAcceptable()         | 检测此密钥的通道是否已准备好接受新的套接字连接     |
 | public final boolean isConnectable()        | 检测此密钥的通道是否已完成或未完成其套接字连接操作 |
 | public final boolean isReadable()           | 检测此密钥的频道是否可以阅读                       |
-| public final boolean isWritable()           | 检测此密钥的通道是否准备好进行写入                 |
+| public final boolean isWritable()           | 检测此密钥的通道是否准备好进行写入             
 
 基本步骤：
 
@@ -16984,9 +17071,7 @@ Selector selector = Selector.open();
 ssChannel.register(selector, SelectionKey.OP_ACCEPT);
 ```
 
-
-
-***
+****
 
 
 
@@ -17161,12 +17246,20 @@ ServerSocket          ServerSocketChannel	       AsynchronousServerSocketChannel
 AsynchronousSocketChannel、AsynchronousServerSocketChannel、AsynchronousFileChannel、AsynchronousDatagramChannel
 
 
-
-
-
 ****
 
-# ⛑ Linux
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
