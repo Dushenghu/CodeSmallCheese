@@ -45,6 +45,63 @@
         </dependency>
 ```
 
+### 配置类
+```java
+package com.cctc.earm.conf;  
+
+import org.springframework.context.annotation.Bean;  
+import org.springframework.context.annotation.Configuration;  
+import org.springframework.http.ResponseEntity;  
+import springfox.documentation.builders.ApiInfoBuilder;  
+import springfox.documentation.builders.PathSelectors;  
+import springfox.documentation.builders.RequestHandlerSelectors;  
+import springfox.documentation.service.ApiInfo;  
+import springfox.documentation.spi.DocumentationType;  
+import springfox.documentation.spring.web.plugins.Docket;  
+import springfox.documentation.swagger2.annotations.EnableSwagger2;  
+  
+import java.time.LocalDate;  
+  
+@Configuration  
+@EnableSwagger2  
+public class Swagger2Config {  
+   /**  
+    * 通过 createRestApi函数来构建一个DocketBean  
+    * 函数名,可以随意命名,喜欢什么命名就什么命名  
+    */  
+   @Bean  
+    public Docket createRestApi() {  
+       return new Docket(DocumentationType.SWAGGER_2)  
+            .apiInfo(apiInfo())  
+            .select()  
+            .apis(RequestHandlerSelectors.basePackage("基础包名"))  
+            .paths(PathSelectors.any())  
+            .build()  
+            .pathMapping("/")  
+            .directModelSubstitute(LocalDate.class, String.class)  
+            .genericModelSubstitutes(ResponseEntity.class)  
+            .useDefaultResponseMessages(false)  
+            .enableUrlTemplating(false);  
+    }  
+   //构建 api文档的详细信息函数  
+   @SuppressWarnings("deprecation")  
+   private ApiInfo apiInfo() {  
+      return new ApiInfoBuilder()  
+            //页面标题  
+            .title("接口标题")  
+            //创建人  
+            .contact("创建人")  
+            //版本号  
+            .version("1.0")  
+            //描述  
+            .description("接口描述")  
+            .build();  
+   }  
+   }
+	
+```
+
+
 ### 涉及到的注解
 
 ```java
@@ -1173,9 +1230,11 @@ public static void downloadFile(HttpServletResponse response, String fileName, I
 ****
 
 
-# 📊SQL 小芝士
+# 📊 数据库
 
-## 查询字段的使用
+## SQL 小芝士
+
+### 查询字段的使用
 > 通过Java操作字段，完成对XML查询条件的限制
 
    1.当实体对象使用 @Table(name="数据库表名") 绑定时，使用 @Transient 忽略字段
@@ -1199,7 +1258,7 @@ public static void downloadFile(HttpServletResponse response, String fileName, I
    
 
 
-## XML文件查询条件
+### XML文件查询条件
 
 > Mapper 方法 ： 
 
@@ -1231,7 +1290,7 @@ public static void downloadFile(HttpServletResponse response, String fileName, I
 ```
 
 
-## 模板SQL操作
+### 模板SQL操作
 
 >导入依赖
 
@@ -1340,13 +1399,13 @@ public static void downloadFile(HttpServletResponse response, String fileName, I
 
 ```
 
-## SQL连接
+### SQL连接
 
 <img src="https://www.runoob.com/wp-content/uploads/2019/01/sql-join.png" style="width: 800px;height: 600px">
 
 
 
-## SQL 小语法记录
+### SQL 小语法记录
 
 ```sql
 //将a字段根据条件b排序后,根据c进行分组并拼接字符d
@@ -1356,12 +1415,266 @@ select  GROUP_CONCAT( a order by b separator 'd')
 order by c
 ```
 
+```sql
+	!=   查不出值为 null 的数据
+```
+
+
+
+## 数据库配置
+
+### 主-从数据库配置(mysql + win)
+
+##### 一、版本控制问题
+各主从数据库使用zip压缩包部署同一版本mysql数据库（8.0.30）。
+
+##### 二、master1主数据库部署
+
+1.修改my.ini 文件，添加配置至 ***mysqld*** 下
+  
+```ini
+#server_id=1  服务器id，不可重复
+
+server-id=1
+
+log-bin=mysql-bin
+
+#binlog记录内容的方式,记录被操作的每一行
+
+binlog_format=ROW
+
+#减少记录日志的内容，只记录受影响的列
+
+binlog_row_image=minimal
+
+#指定需要复制的数据库名,多个数据库，重复设置
+
+binlog-do-db=testslave
+
+#不需要备份的数据库名,多个数据库，重复设置
+
+binlog-ignore-db=mysql
+
+binlog-ignore-db=performance_schema
+
+binlog-ignore-db=information_schema
+
+binlog-ignore-db=sys
+
+# 这个参数要加上，否则不会给更新的记录写到二进制文件里
+
+log-slave-updates=1
+```
+
+2.打开cmd窗口，依次输入命令启动mysql服务为从数据库创建使用账户并赋予权限。
+ 
+```ini
+mysql -uroot -p
+
+create user 'slave'@'%' identified with mysql_native_password by '123456';
+
+grant REPLICATION CLIENT ON *.* TO slave;
+
+grant REPLICATION SLAVE ON *.* TO slave;
+
+grant SUPER ON *.* TO slave;
+
+grant reload on *.* to slave;
+
+FLUSH PRIVILEGES;
+```
+
+3.查看Master状态，记录二进制文件名和位置
+
+	show master status;
+	
+![](file:///E:/TEMP/msohtmlclip1/01/clip_image002.jpg)
+
+
+4.进入主库进行锁表，锁表后不要关闭
+
+       flush table with read lock;
+
+5.打开新cmd窗口，导出表数据
+
+       mysqldump -uroot -p --opt -R 数据库 > /data/bak.sql
+
+##### 三、master2主数据库配置
+
+1.修改my.ini 文件，添加配置至 ***mysqld***下
+
+```ini
+#server_id=2  服务器id，不可重复
+
+server-id=1
+
+log-bin=mysql-bin
+
+#binlog记录内容的方式,记录被操作的每一行
+
+binlog_format=ROW
+
+#减少记录日志的内容，只记录受影响的列
+
+binlog_row_image=minimal
+
+#指定需要复制的数据库名,多个数据库，重复设置
+
+binlog-do-db=testslave
+
+#不需要备份的数据库名,多个数据库，重复设置
+
+binlog-ignore-db=mysql
+
+binlog-ignore-db=performance_schema
+
+binlog-ignore-db=information_schema
+
+binlog-ignore-db=sys
+
+# 这个参数要加上，否则不会给更新的记录写到二进制文件里
+
+log-slave-updates=1
+```
+
+2.打开cmd窗口，依次输入命令启动mysql服务为从数据库创建使用账户并赋予权限。
+
+```ini
+mysql -uroot -p
+
+create user 'slave'@'%' identified with mysql_native_password by '123456';
+
+grant REPLICATION CLIENT ON *.* TO slave;
+
+grant REPLICATION SLAVE ON *.* TO slave;
+
+grant SUPER ON *.* TO slave;
+
+grant reload on *.* to slave;
+
+FLUSH PRIVILEGES;
+```
+
+3. 查看Master状态，记录二进制文件名和位置
+
+       show master status;
+
+4.进入主库进行锁表，锁表后不要关闭
+
+       flush table with read lock;
+
+5.不需要重复导出表结构，但需保证所有主数据库及从数据库表结构均一致。
+
+
+##### 四、slave从数据库配置
+
+ 1.修改my.ini 文件，添加配置至 ***mysqld*** 下
+```ini
+server-id=2
+
+#开启mysql binlog功能
+
+log-bin=mysql-bin
+
+#binlog记录内容的方式，记录被操作的每一行
+
+binlog_format=ROW
+
+# 减少记录日志的内容，只记录受影响的列
+
+binlog_row_image = minimal
+
+replicate_wild_ignore_table=mysql.%
+
+replicate_wild_ignore_table=performance_schema.%
+
+replicate_wild_ignore_table=information_schema.%
+```
+
+2.打开cmd窗口启动数据库服务并导入备份的数据文件
+
+```ini
+mysql -uroot -p
+
+source /data/bak.sql
+```
+
+3.手动同步多个主数据库
+
+```ini
+Master1：
+
+CHANGE MASTER TO
+
+MASTER_HOST='192.168.0.103',
+
+MASTER_USER='slave',
+
+MASTER_PASSWORD='123456',
+
+MASTER_LOG_FILE='mysql-bin.000001',
+
+MASTER_LOG_POS=1827 
+
+FOR CHANNEL 'master_1';
+
+Master2：
+
+CHANGE MASTER TO
+
+MASTER_HOST='192.168.0.105',
+
+MASTER_USER='slave',
+
+MASTER_PASSWORD='123456',
+
+MASTER_LOG_FILE='mysql-bin.000001',
+
+MASTER_LOG_POS=157
+
+FOR CHANNEL 'master_2';
+```
+
+4.启动slave同步进程
+
+```ini
+start slave for channel 'master_1';
+
+start slave for channel 'master_2';
+```
+
+5.查看slave状态
+
+```ini
+show slave status \G
+```
+
+当每个master的两个相关状态为YES时，配置成功
+![](file:///E:/TEMP/msohtmlclip1/01/clip_image002.jpg)![](file:///E:/TEMP/msohtmlclip1/01/clip_image004.jpg)
+在此过程中，若两状态有NO或Connecting状态，则需排查“
+
+      （1）网络不通
+
+      （2）防火墙端口未开放
+
+      （3）mysql账户密码错误
+
+      （4）mysql主从机配置文件写错
+
+      （5）配置从机连接语法错误
+
+      （6）主机未开放账户连接权限
+
+修改后使用重启slave配置
+```ini
+stop slave,
+start slave,
+show slave status
+```
 
 
 
 # ☕咖啡 小芝士
-
-
 
  ## 各种锁
 
@@ -1526,6 +1839,13 @@ int indexOf(String str)
 int indexOf(String str, int fromIndex)
 
 ```
+
+### StringBuffer StringBuilder
+
+> StringBuffer对象代表一个字符序列可变的字符串，当一个StringBuffer被创建以后，通过StringBuffer提供的append()、insert()、reverse()、setCharAt()、setLength()等方法可以改变这个字符串对象的字符序列，但都不会产生新的对象。通过StringBuffer生成的字符串，可以调用toString()方法将其转换为一个String对象。
+
+>StringBuilder类也代表可变字符串对象。实际上，StringBuilder和StringBuffer基本相似，他们的原理与操作一样，两个类的构造器和方法也基本相同。不同的是：StringBuffer是线程安全的，而StringBuilder则没有实现线程安全功能，所以性能略高。
+
 
 ### BigDecimal
 ```java
@@ -2517,15 +2837,15 @@ Windows：
 Linux：
 
 * ps -ef 查看所有进程
-* ps -fT -p <PID> 查看某个进程（PID）的所有线程
+* ps -fT -p PID 查看某个进程（PID）的所有线程
 * kill 杀死进程
 * top 按大写 H 切换是否显示线程
-* top -H -p <PID> 查看某个进程（PID）的所有线程
+* top -H -p PID 查看某个进程（PID）的所有线程
 
 Java：
 
 * jps 命令查看所有 Java 进程
-* jstack <PID> 查看某个 Java 进程（PID）的所有线程状态
+* jstack PID 查看某个 Java 进程（PID）的所有线程状态
 * jconsole 来查看某个 Java 进程中线程的运行情况（图形界面）
 
 
@@ -3232,7 +3552,7 @@ public class Dead {
       at thread.TestDeadLock$$Lambda$1/495053715
   ```
 
-* Linux 下可以通过 top 先定位到 CPU 占用高的 Java 进程，再利用 `top -Hp 进程id` 来定位是哪个线程，最后再用 jstack <pid>的输出来看各个线程栈
+* Linux 下可以通过 top 先定位到 CPU 占用高的 Java 进程，再利用 `top -Hp 进程id` 来定位是哪个线程，最后再用 jstack  pid 的输出来看各个线程栈
 
 * 避免死锁：避免死锁要注意加锁顺序
 
@@ -7423,11 +7743,11 @@ ExecutorService 类 API：
 | 方法                                                         | 说明                                                         |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | void execute(Runnable command)                               | 执行任务（Executor 类 API）                                  |
-| Future<?> submit(Runnable task)                              | 提交任务 task()                                              |
-| Future submit(Callable<T> task)                              | 提交任务 task，用返回值 Future 获得任务执行结果              |
-| List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) | 提交 tasks 中所有任务                                        |
-| List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) | 提交 tasks 中所有任务，超时时间针对所有task，超时会取消没有执行完的任务，并抛出超时异常 |
-| T invokeAny(Collection<? extends Callable<T>> tasks)         | 提交 tasks 中所有任务，哪个任务先成功执行完毕，返回此任务执行结果，其它任务取消 |
+| Future (?) submit(Runnable task)                              | 提交任务 task()                                              |
+| Future submit(Callable (T) task)                              | 提交任务 task，用返回值 Future 获得任务执行结果              |
+| List(Future(T)) invokeAll(Collection(? extends Callable(T)) tasks) | 提交 tasks 中所有任务                                        |
+| List(Future(T>> invokeAll(Collection(? extends Callable(T>> tasks, long timeout, TimeUnit unit) | 提交 tasks 中所有任务，超时时间针对所有task，超时会取消没有执行完的任务，并抛出超时异常 |
+| T invokeAny(Collection(? extends Callable(T>> tasks)         | 提交 tasks 中所有任务，哪个任务先成功执行完毕，返回此任务执行结果，其它任务取消 |
 
 execute 和 submit 都属于线程池的方法，对比：
 
@@ -7448,7 +7768,7 @@ ExecutorService 类 API：
 | 方法                                                  | 说明                                                         |
 | ----------------------------------------------------- | ------------------------------------------------------------ |
 | void shutdown()                                       | 线程池状态变为 SHUTDOWN，等待任务执行完后关闭线程池，不会接收新任务，但已提交任务会执行完，而且也可以添加线程（不绑定任务） |
-| List<Runnable> shutdownNow()                          | 线程池状态变为 STOP，用 interrupt 中断正在执行的任务，直接关闭线程池，不会接收新任务，会将队列中的任务返回 |
+| List(Runnable> shutdownNow()                          | 线程池状态变为 STOP，用 interrupt 中断正在执行的任务，直接关闭线程池，不会接收新任务，会将队列中的任务返回 |
 | boolean isShutdown()                                  | 不在 RUNNING 状态的线程池，此执行者已被关闭，方法返回 true   |
 | boolean isTerminated()                                | 线程池状态是否是 TERMINATED，如果所有任务在关闭后完成，返回 true |
 | boolean awaitTermination(long timeout, TimeUnit unit) | 调用 shutdown 后，由于调用线程不会等待所有任务运行结束，如果它想在线程池 TERMINATED 后做些事情，可以利用此方法等待 |
@@ -7531,7 +7851,7 @@ ThreadPoolExecutor 使用 int 的**高 3 位来表示线程池状态，低 29 �
   private static final int TERMINATED =  3 << COUNT_BITS;
   ```
 
-  | 状态       | 高3位 | 接收新任务 | 处理阻塞任务队列 | 说明                                      |
+|状态       | 高3位 | 接收新任务 | 处理阻塞任务队列 | 说明                                      |
   | ---------- | ----- | ---------- | ---------------- | ----------------------------------------- |
   | RUNNING    | 111   | Y          | Y                |                                           |
   | SHUTDOWN   | 000   | N          | Y                | 不接收新任务，但处理阻塞队列剩余任务      |
@@ -7549,6 +7869,7 @@ ThreadPoolExecutor 使用 int 的**高 3 位来表示线程池状态，低 29 �
   // 111 000000000000000000000	获取到了运行状态
   private static int runStateOf(int c)     { return c & ~CAPACITY; }
   ```
+
 
 * 获取当前线程池线程数量：
 
@@ -7786,8 +8107,6 @@ ThreadPoolExecutor 使用 int 的**高 3 位来表示线程池状态，低 29 �
           reject(command);
   }
   ```
-
-
 
 
 
@@ -17042,11 +17361,11 @@ public class ChannelTest {
 | public abstract int select(long timeout)         | **阻塞**等待 timeout 毫秒                   |
 | public abstract int selectNow()                  | 获取一下，**不阻塞**，立刻返回              |
 | public abstract Selector wakeup()                | 唤醒正在阻塞的 selector                     |
-| public abstract Set<SelectionKey> selectedKeys() | 返回此选择器的选择键集                      
+| public abstract Set(<)SelectionKey> selectedKeys() | 返回此选择器的选择键集            |          
 
 SelectionKey API:
 
-| 方法                                        | 说明                                               
+| 方法                                        | 说明                                               |
 | ------------------------------------------- | ---------------------------------|
 | public abstract void cancel()               | 取消该键的通道与其选择器的注册                   
 | public abstract SelectableChannel channel() | 返回创建此键的通道，该方法在取消键之后仍将返回通道 |
@@ -17079,14 +17398,14 @@ ssChannel.register(selector, SelectionKey.OP_ACCEPT);
 
 #### 常用API
 
-* SelectableChannel_API
+*  SelectableChannel_API:
 
-  | 方法                                                         | 说明                                         |
+  |方法                                                         | 说明                                         |
   | ------------------------------------------------------------ | -------------------------------------------- |
   | public final SelectableChannel configureBlocking(boolean block) | 设置此通道的阻塞模式                         |
   | public final SelectionKey register(Selector sel, int ops)    | 向给定的选择器注册此通道，并选择关注的的事件 |
 
-* SocketChannel_API：
+*  SocketChannel_API：
 
   | 方法                                                    | 说明                           |
   | :------------------------------------------------------ | ------------------------------ |
@@ -17097,7 +17416,7 @@ ssChannel.register(selector, SelectionKey.OP_ACCEPT);
   | public abstract SocketAddress getLocalAddress()         | 返回套接字绑定的本地套接字地址 |
   | public abstract SocketAddress getRemoteAddress()        | 返回套接字连接的远程套接字地址 |
 
-* ServerSocketChannel_API：
+*  ServerSocketChannel_API：
 
   | 方法                                                       | 说明                                                         |
   | ---------------------------------------------------------- | ------------------------------------------------------------ |
