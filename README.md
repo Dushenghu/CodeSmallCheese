@@ -1846,6 +1846,37 @@ upstream server_pool {
 ```
 
 
+## 动静分离
+
+> Nginx动静分离简单来说就是把动态跟静态请求分开，不能理解成只是单纯的把动态页面和静态页面物理分离。严格意义上说应该是动态请求跟静态请求分开，可以理解成使用Nginx处理静态页面，Tomcat处理动态页面。动静分离从目前实现角度来讲大致分为两种，一种是纯粹把静态文件独立成单独的域名，放在独立的服务器上，也是目前主流推崇的方案；另外一种方法就是动态跟静态文件混合在一起发布，通过Nginx来分开.
+
+**实现效果**
+
+如果不设置动静分离，默认会通过Nginx的反向代理去找Tomcat对应的资源，现在我们在根目录下创建一个/data/www/文件夹，里边放上静态资源，比如一个html页面，在8080的那台Tomcat的WebApps下也创建一个www目录，同样是放一个静态资源，当输入这个静态资源的请求时，访问到的是/data/www中的数据。
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicT15UyDzvfice1WG0Od1Qic6qk70zdQCQAzxpm1ViclR5mibLGXib6MDOStw/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+**实现思路**
+
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicKjVz2Spd6n66TBzkVenvibYvHF4LlJ0HbhHpB2uuWgjfIDTMg1vAp9Q/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+
+```ini
+server {  
+        listen       80;  
+        server_name  192.168.206.128;  
+  
+        #charset koi8-r;  
+  
+        #access_log  logs/host.access.log  main;  
+  
+        location /www/ {  
+            root /data/;  
+            index index.html index.htm;  
+        }
+```
+
 ## 配置详解
 
 ### 整体结构图
