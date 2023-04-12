@@ -9,6 +9,8 @@
 > 佐糖在线图片压缩 API ：  https://picwish.cn/image-compression-api
 
 
+***
+
 ##  🧰easyTools工具包
 ### 简介
 > 自己搞的小工具包
@@ -16,6 +18,8 @@
 ### 仓库
 > [jar包仓库](https://github.com/Dushenghu/easyTools.git)  :  github ==> easyTools ==> jar(package) 
 
+
+***
 
 ## 🕷︎Swagger
 
@@ -136,6 +140,9 @@ public String funnction_name(@RequestBody(required=true) 操作对象类型 操�
 - options	允许客户端查看服务器的性能
 - trace	回显服务器收到的请求，主要用于测试或者诊断
 - connect	预留给能够连接改为管道方式的代理服务器
+
+
+***
 
 
 ## 🛠Apache Commons 工具包
@@ -362,6 +369,8 @@ public class UuidUtil {
 ```
 
 
+***
+
 
 ## 📅日志打印工具
 
@@ -420,6 +429,8 @@ public class XXXXController extends BaseController {
 ```
 
 
+***
+
 ## 🔧FastJsonUtils 工具类
 
 ### 简介：Json 返回处理
@@ -436,6 +447,10 @@ public class XXXXController extends BaseController {
 			<version>1.2.83</version>
 	</dependency>
 ```
+
+
+***
+
 
 ## 🍃SpringBoot 
 
@@ -653,6 +668,8 @@ public class XXXXController extends BaseController {
 ```
 
 
+***
+
 
 ##  ☘SpringCloud 微服务
 
@@ -660,6 +677,8 @@ public class XXXXController extends BaseController {
 
 > 学习网站（CSDN） https://blog.csdn.net/weixin_38007185/article/details/108186254
 
+
+***
 
 ## 🌊阿里巴巴Durid连接池
 
@@ -811,6 +830,7 @@ public class DruidAutoConfiguration {
 ```
 
 
+***
 
 ## 📑PageHelper(分页插件)
 
@@ -840,9 +860,15 @@ findPage方法(对象){
 }
 ```
 
+
+***
+
 ## 🎁HuTool(Java工具包)
 ### 说明
 >官方文档  https://hutool.cn/
+
+
+***
 
 ## 🔑Kaptcha (验证码生成)
 
@@ -918,6 +944,9 @@ public class CodeController {
 ```html
  <img src="/kaptcha" title="看不清，点击换一张！"onclick="this.src='/kaptcha?d='+new Date().getTime()" id="img">
 ```
+
+
+***
 
 ## 📒基于POI的文件导出
 
@@ -1673,6 +1702,385 @@ show slave status
 ```
 
 
+-----
+
+
+# 📫Nginx 
+
+## 概述
+
+> 一个高性能的HTTP和反向代理服务器;特点：特点是占有内存少，并发能力强
+
+>官网地址： https://nginx.p2hp.com/
+
+> 学习链接： https://mp.weixin.qq.com/s?__biz=MzU0OTE4MzYzMw==&mid=2247516769&idx=3&sn=2c9b6a79c8bd1476d99057caedb1875d&chksm=fbb10b9fccc682899bc443838d327796d909e217a21ba36d5853a31078e6bf81ccc47fc9bf89&scene=27
+
+> 反向代理： 客户端对代理是无感知的，因为客户端不需要任何配置就可以访问，我们只需要将请求发送到反向代理服务器，由反向代理服务器去选择目标服务器获取数据后，在返回给客户端，此时反向代理服务器和目标服务器对外就是一个服务器，暴露的是代理服务器地址，隐藏了真实服务器信息；
+> 正向代理：如果把局域网外的Internet想象成一个巨大的资源库，则局域网中的客户端要访问Internet，则需要通过代理服务器来访问，这种代理服务就称为正向代理
+
+## 反向代理
+
+实例1： **实现效果**
+打开浏览器，在浏览器地址栏输入地址：http://www.123.com，跳转到Liunx系统Tomcat主页面中。
+
+**实现思路**
+![反向代理实例1](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicyvpgwgf9Jf2Tr5vCs5QfCtQbu9O5ru3EL9NBQb1M1zvibQVFkUtpE0A/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+```ini
+server {  
+        listen       80;  
+        server_name  192.168.206.128;  
+  
+        #charset koi8-r;  
+  
+        #access_log  logs/host.access.log  main;  
+  
+        location / {  
+            proxy_pass http:127.0.0.1:8080;  
+            root   html;  
+            index  index.html index.htm;  
+        }
+ }
+```
+
+实例2：**实现效果**
+使用Nginx反向代理，根据访问的路径跳转到不同端口的服务中。
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicJmVxBXmJm6UwsV3YCR2j5uVic3y98CiclQcQu5Ylx2adGtojGaVVlF4g/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+**实现思路**
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicoU0DWZfK8okTQ5huiclRyDl0hbw4PZWdqpZY2EavpdnwDXBW8W4sw2g/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+```ini
+server {  
+        listen       80;  
+        server_name  192.168.206.128;  
+  
+        #charset koi8-r;  
+  
+        #access_log  logs/host.access.log  main;  
+  
+        location ~ /edu/ {  
+            proxy_pass http://127.0.0.1:8080;  
+        }  
+  
+        location ~ /vod/ {  
+            proxy_pass http://127.0.0.1:8081;  
+        }
+ }
+```
+
+## 负载均衡
+
+> 将请求分发到各个服务器上，将原先请求集中到单个服务器上的情况改为将请求分发到多个服务器上，将负载分发到不同的服务器
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicdT8iaibY60xLZfHVmSYvA5L2U9LlKcic5JFr72icCjxUCQVnNOdOt1icAWA/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+实例：**实现效果**
+浏览器地址栏输入地址：http://192.168.206.128/edu/a.html，负载均衡效果，将请求平均到8080和8081端口中。
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoic4ia7pPrHtciayPnHYibbpnB4xRTOsbeibfbia5guC9G9Vx6ialTnvv0RhjyA/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+**实现思路**
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicFvv1DGE1wRJ8huibKomicK0ibO19Zx7Iicia0ISzDF7t4N3JbAljzGhyjow/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+```ini
+upstream myserver {  
+        server 192.168.206.128:8080;  
+        server 192.168.206.128:8081;  
+}  
+  
+    server {  
+        listen       80;  
+        server_name  192.168.206.128;  
+  
+        #charset koi8-r;  
+  
+        #access_log  logs/host.access.log  main;  
+  
+        location / {  
+            proxy_pass http://myserver;  
+        }
+    }
+```
+
+**分配策略**
+
+轮询（默认）：每个请求按时间顺序逐一分配到不同的后端服务器，如果后端服务器down掉，能自动剔除。
+
+```ini
+upstream server_pool {  
+  server 192.168.206.128:80;  
+  server 192.168.206.128:80;  
+} 
+```
+
+weight：weight代表权重，默认为1，权重越高被分配的客户端越多，weight和访问比率成正比，用于后端服务器性能不均的情况。例如：
+
+```ini
+upstream server_pool {  
+  server 192.168.206.128 weight=10;  
+  server 192.168.206.129 weight=10;  
+} 
+```
+
+ip_hash：每个请求按访问IP的hash结果分配，这样每个访客固定访问一个后端服务器，可以解决session的问题。例如：
+
+```ini
+upstream server_pool {  
+  ip_hash;
+  server 192.168.206.128:80;  
+  server 192.168.206.129:80;  
+} 
+```
+
+fair（第三方）：按后端服务器的响应时间来分配请求，响应时间短的优先分配。例如：
+
+```ini
+upstream server_pool {  
+  server 192.168.206.128:80;  
+  server 192.168.206.129:80;  
+  fair;
+} 
+```
+
+
+## 配置详解
+
+### 整体结构图
+ 
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoichjDPI9oZ4RsLH4Lde39kvKIgxQSfoDDDiaUDPF5ic9KiaFVvUUbaBERkQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+### 配置演示图
+ 
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicCtjqfAibuOyz2TBvghgHDevHvwZAaHWOiaj0AHjXRZlQ8ffzQwDMhRew/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+#### 全局块
+
+配置影响Nginx全局的指令。主要包括：
+
+-   配置运行Nginx服务器用户（组）
+-   worker process数
+-   Nginx进程
+-   PID存放路径错误日志的存放路径
+-   一个Nginx进程打开的最多文件描述符数目
+
+例如：
+```ini
+#配置worker进程运行用户（和用户组），nobody也是一个Linux用户，一般用于启动程序，没有密码  
+user nobody;  
+#user www www;  
+  
+#配置工作进程数目，根据硬件调整，通常等于CPU数量或者2倍于CPU数量  
+worker_processes 1;  
+  
+#配置全局错误日志及类型，[debug | info | notice | warn | error | crit]，默认是error  
+error_log logs/error.log;  
+#error_log logs/error.log notice;  
+#error_log logs/error.log info;  
+  
+#配置进程pid文件  
+pid logs/nginx.pid;  
+  
+#一个nginx进程打开的最多文件描述符数目，理论值应该是最多打开文件数（系统的值ulimit -n）与Nginx进程数相除，但是Nginx分配请求并不均匀，所以建议与ulimit -n的值保持一致。  
+worker_rlimit_nofile 65535;
+```
+
+#### events块
+
+ 配置影响Nginx服务器或与用户的网络连接。主要包括：
+
+ -   事件驱动模型的选择
+ -   最大连接数的配置
+
+ 例如：
+ ```ini
+#参考事件模型，use [ kqueue | rtsig | epoll | /dev/poll | select | poll ];   
+#epoll模型是Linux 2.6以上版本内核中的高性能网络I/O模型，如果跑在FreeBSD上面，就用kqueue模型。  
+use epoll;  
+  
+#单个进程最大连接数（最大连接数=连接数*进程数）  
+worker_connections 65535;
+```
+
+#### http块
+
+可以嵌套多个server，配置代理，缓存，日志定义等绝大多数功能和第三方模块的配置。主要包括：
+
+-   定义MIMI-Type
+-   自定义服务日志
+-   允许sendfile方式传输文件
+-   连接超时时间
+-   单连接请求数上限
+
+```ini
+#常见的一些基础配置  
+include mime.types; #文件扩展名与文件类型映射表  
+default_type application/octet-stream; #默认文件类型  
+charset utf-8; #默认编码  
+server_names_hash_bucket_size 128; #服务器名字的hash表大小  
+client_header_buffer_size 32k; #上传文件大小限制  
+large_client_header_buffers 4 64k; #设定请求缓冲  
+client_max_body_size 8m; #设定请求缓冲  
+sendfile on; #开启高效文件传输模式，对于普通应用设为on，如果用来进行下载等应用磁盘IO重负载应用，可设置为off，以平衡磁盘与网络I/O处理速度，降低系统的负载。注意：如果图片显示不正常把这个改成off。  
+autoindex on; #开启目录列表访问，合适下载服务器，默认关闭。  
+tcp_nopush on; #防止网络阻塞  
+tcp_nodelay on; #防止网络阻塞  
+keepalive_timeout 120; #长连接超时时间，单位是秒  
+  
+#FastCGI相关参数是为了改善网站的性能：减少资源占用，提高访问速度。  
+fastcgi_connect_timeout 300;  
+fastcgi_send_timeout 300;  
+fastcgi_read_timeout 300;  
+fastcgi_buffer_size 64k;  
+fastcgi_buffers 4 64k;  
+fastcgi_busy_buffers_size 128k;  
+fastcgi_temp_file_write_size 128k;  
+  
+#gzip模块设置  
+gzip on; #开启gzip压缩输出  
+gzip_min_length 1k; #最小压缩文件大小  
+gzip_buffers 4 16k; #压缩缓冲区  
+gzip_http_version 1.0; #压缩版本（默认1.1，前端如果是squid2.5请使用1.0）  
+gzip_comp_level 2; #压缩等级  
+gzip_types text/plain application/x-javascript text/css application/xml; #压缩类型  
+gzip_vary on; #增加响应头'Vary: Accept-Encoding'  
+limit_zone crawler $binary_remote_addr 10m; #开启限制IP连接数的时候需要使用
+```
+
+#### server块
+
+配置虚拟主机的相关参数，一个http中可以有多个server。主要包括：
+
+-   配置网络监听
+-   配置https服务
+-   基于名称的虚拟主机配置
+-   基于IP的虚拟主机配置
+
+例如：
+```ini
+#虚拟主机的常见配置  
+server {  
+    listen       80; #配置监听端口  
+    server_name  localhost; #配置服务名  
+    charset utf-8; #配置字符集  
+    access_log  logs/host.access.log  main; #配置本虚拟主机的访问日志  
+      
+    location / {  
+        root html; #root是配置服务器的默认网站根目录位置，默认为Nginx安装主目录下的html目录  
+        index index.html index.htm; #配置首页文件的名称  
+    }  
+      
+    error_page 404             /404.html; #配置404错误页面  
+    error_page 500 502 503 504 /50x.html; #配置50x错误页面  
+}  
+  
+#配置https服务，安全的网络传输协议，加密传输，端口443  
+server {  
+    listen       443 ssl;  
+    server_name  localhost;  
+  
+    ssl_certificate      cert.pem;  
+    ssl_certificate_key  cert.key;  
+  
+    ssl_session_cache    shared:SSL:1m;  
+    ssl_session_timeout  5m;  
+  
+    ssl_ciphers  HIGH:!aNULL:!MD5;  
+    ssl_prefer_server_ciphers  on;  
+  
+    location / {  
+        root   html;  
+        index  index.html index.htm;  
+    }  
+}
+```
+
+#### location块
+
+配置请求的路由，以及各种页面的处理情况。主要包括：
+
+-   请求根目录配置更改
+-   网站默认首页配置
+-   location的URI
+
+例如：
+```ini
+root html; #root是配置服务器的默认网站根目录位置，默认为Nginx安装主目录下的html目录  
+index index.html index.htm; #配置首页文件的名称  
+  
+proxy_pass http://127.0.0.1:88; #反向代理的地址  
+proxy_redirect off; #是否开启重定向  
+#后端的Web服务器可以通过X-Forwarded-For获取用户真实IP  
+proxy_set_header X-Real-IP $remote_addr;  
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  
+proxy_set_header Host $host;  
+#以下是一些反向代理的配置，可选。  
+client_max_body_size 10m; #允许客户端请求的最大单文件字节数  
+client_body_buffer_size 128k; #缓冲区代理缓冲用户端请求的最大字节数，  
+proxy_connect_timeout 90; #nginx跟后端服务器连接超时时间（代理连接超时）  
+proxy_send_timeout 90; #后端服务器数据回传时间（代理发送超时）  
+proxy_read_timeout 90; #连接成功后，后端服务器响应时间（代理接收超时）  
+proxy_buffer_size 4k; #设置代理服务器（Nginx）保存用户头信息的缓冲区大小  
+proxy_buffers 4 32k; #proxy_buffers缓冲区，网页平均在32k以下的设置  
+proxy_busy_buffers_size 64k; #高负荷下缓冲大小（proxy_buffers*2）  
+proxy_temp_file_write_size 64k;  #设定缓存文件夹大小
+```
+
+
+
+
+tips: location指令说明
+描述：该指令用于匹配URL。
+  
+语法：
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicGuveFMgxI7LVVvUoeRicVibMdFNSLDHbDc3xWO9CKIrqialm8LskSiaeVw/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+通配符：
+
+-   =：用于不含正则表达式的uri前，要求请求字符串与uri严格匹配，如果匹配成功，就停止继续向下搜索并立即处理该请求。
+-   ~：用于表示uri包含正则表达式，并且区分大小写。
+-   ~* ：用于表示uri包含正则表达式，并且不区分大小写。
+-   ^~：用于不含正则表达式的uri前，要求Nginx服务器找到标识uri和请求字符串匹配度最高的location后，立即使用此location处理请求，而不再使用location块中的正则uri和请求字符串做匹配。
+- 
+注意：如果uri包含正则表达式，则必须要有~或者~* 标识。
+
+
+
+
+
+## Nginx原理分析
+
+### Nginx线程模型
+
+> Nginx默认采用多进程工作方式，Nginx启动后，会运行一个master进程和多个worker进程。其中master充当整个进程组与用户的交互接口，同时对进程进行监护，管理worker进程来实现重启服务、平滑升级、更换日志文件、配置文件实时生效等功能。worker用来处理基本的网络事件，worker之间是平等的，他们共同竞争来处理来自客户端的请求。
+
+Nginx的进程模型如图所示：
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicjKBy2C5aABhrtQP0Ixg4P2IgSAHuR8zEyekNdGWO2ia3XXbp4bnMdgA/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+### worker的工作模式
+
+> worker对于连接是采用争抢的模式，谁先抢到就先交给谁处理，如果想要重新更新配置，由于已经抢到任务的worker不会参与争抢，那些空闲的worker就会去争抢连接，拿到连接后会自动更新配置信息，当那些有任务的worker完成任务后，会自动更新配置，这样就实现了无缝热部署。由于每个worker是独立的进程，如果有其中的一个worker出现问题，并不会影响其它worker继续进行争抢，在实现请求的过程，不会造成服务中断，建议worker数和服务器的CPU数相等是最为适宜的。
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk56QLvAACZRLNEWPf4BcfKoicBZQ1smtiaXq6hRKBfYQZbFpiaa5miaicCEkFQdz8ORkcLTuzprUoicCliapg/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+
+##### 如何计算worker连接数
+
+如果只访问Nginx的静态资源，一个发送请求会占用了woker的2个连接数
+
+而如果是作为反向代理服务器，一个发送请求会占用了woker的4个连接数
+
+##### 如何计算最大的并发数
+
+如果只访问nginx的静态资源，最大并发数量应该是：worker_connections * worker_processes / 2
+
+而如果是作为反向代理服务器，最大并发数量应该是：worker_connections * worker_processes / 4
+
+
+-----
+
 
 # ☕咖啡 小芝士
 
@@ -2115,6 +2523,10 @@ designAppraiseAsyncService.addFlowData(designAppraiseBo);
 #### 简介
 >cookie：非常具体的东西，指的就是浏览器里面能永久存储的一种数据，仅仅是浏览器实现的一种数据存储功能。cookie由服务器生成，发送给浏览器，浏览器把cookie以kv形式保存到某个目录下的文本文件内，下一次请求会把该cookie发送给服务器。
 
+
+
+
+-----
 
 
 # 🧵JUC
@@ -15263,10 +15675,6 @@ final void updateHead(Node<E> h, Node<E> p) {
       return false;
   }
   ```
-
-
-
-
 
 
 
