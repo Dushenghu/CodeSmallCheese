@@ -8,6 +8,10 @@
 
 > 佐糖在线图片压缩 API ：  https://picwish.cn/image-compression-api
 
+> 菜鸟工具箱（啥也有） ：  https://c.runoob.com/
+
+> Java 全栈知识体系 : https://www.pdai.tech/
+
 
 ***
 
@@ -2124,9 +2128,135 @@ Nginx的进程模型如图所示：
 
 ## List 集合操作
 
+***Key :  Collectors
+
+> fliter    过滤
+> map     运算
+> distinct   去重
+
 > 整理 list map  --->  steam  collect  map
 
->将目标List集合分组
+### list 遍历
+
+```java
+// for 循环
+for(int i = 0;i<list.size();i++){
+	sout(list.get(i));
+}
+
+// 对象遍历
+for(Object ob : list){
+	sout(ob);
+}
+
+！！// Lambda 表达式
+list.forEach( ob -> {
+	sout(ob);
+})
+
+// 迭代器遍历
+Iterator<类型> iterator = list.iterator();
+while(iterator.hasNext()){
+	类型 ob = iterator.next();
+	sout(ob);
+}
+
+// 打印语法糖
+list.forEach(System.out::println);
+
+```
+
+### list排序
+
+> 单条件
+
+```java
+// 单条件升序
+List<Object> ascList = list.stream().sorted(Comparator.comparing(Object::属性条件)).collect(Collectors.toList());
+
+// 单条件降序
+	// 1.先升序再逆置
+List<Object> descList = list.stream().sorted(Comparator.comparing(Object::属性条件).reversed()).collect(Collectors.toList());
+	// 2.直接降序
+List<Object> descList = list.stream().sorted(Comparator.comparing(Object::属性条件,Comparator.reverseOrder())).collect(Collectors.toList());	
+
+```
+
+> 多条件
+
+```java 
+// 属性一升序+属性二降序
+List<Object> ascList = list.stream().sorted(Comparator.comparing(Object::属性条件1))
+.thenComparing(Object::属性条件2,Comparator.reverseOrder())
+.collect(Collectors.toList());
+```
+
+###  list转Map
+
+> 1 : 1 的 K-V 结构    #toMap
+
+```java
+/**
+*  list -> map 
+*  Tip: 使用 toMap 时，当集合中对象有重复的key,会报 Duplicate key....
+*  Collectors.toMap(Key::key,Value::value,Key重复解决方式)
+*  可用 （k1,k2）-> k1 设置，当有重复的key,会保留 k1 ,舍弃 k2
+*/
+Map<分组属性类型,List<Object>> map = list.stream()
+.collect(Collectors.toMap(Object::分组属性, a -> a,(k1,k2) -> k1));
+```
+
+> 1: n 的 K-V 结构   #groupingBy
+
+```java
+//单属性分组
+Map<分组属性类型,List<Object>> map = lsit.stream()
+.collcet(Collectors.groupingBy( Object :: 分组属性 ))；
+
+//多属性分组
+Map<分组属性类型,List<Object>> map = lsit.stream()
+.collcet(Collectors.groupingBy( Ob -> {
+	ob.分组属性1 + "_" + ob.分组属性2
+} ))；
+
+//条件判断
+Map<分组属性类型,List<Object>> map = lsit.stream()
+.collcet(Collectors.groupingBy( ob -> {
+	if(ob.分组属性的分组条件1){
+		return 组别1<分组属性类型>
+	}else if(ob.分组属性的分组条件2){
+		return 组别2<分组属性类型>
+	}else{
+		return 组别3<分组属性类型>
+	}
+} ))；
+
+//多级分组 （实质：双参数复合 Collectors.groupingBy（））
+Map<分组属性类型,List<Object>> map = lsit.stream()
+.collcet(Collectors.groupingBy(
+	object :: 分组属性1, // 一级分组
+	// 二级分组
+	Collectors.groupingBy( ob -> {
+	ob.属性
+	})
+))；
+
+//求每组数量
+Map<分组属性类型,Long> map = lsit.stream()
+.collcet(Collectors.groupingBy( Object :: 分组属性, Collectors.counting() ))；
+
+//分组求和
+Map<分组属性类型,Double> map = lsit.stream()
+.collcet(Collectors.groupingBy( Object :: 分组属性, Collectors.summingDouble(Object :: 求和属性) ))；
+
+
+
+```
+
+
+### 其他
+
+> 根据某一属性提取为List
 
 ```java
 List<类型> applyTypeList = list.stream().map(实体类 :: 条件).distinct().collect(Collectors.toList());
@@ -2138,23 +2268,12 @@ List<类型> applyTypeList = list.stream().map(实体类 :: 条件).distinct().c
 BoList.removeIf(e -> Strings.isNullOrEmpty(e.getProjectCode()));
 ```
 
->List集合元素排序
-
-```java
-//根据 ProjectCode 逆序（需生成新的List）
-
-List<PlanAppraiseBo> sortList = value.stream().sorted(Comparator.comparing(PlanAppraiseBo::getProjectCode).reversed()).collect(Collectors.toList());
-```
-
 >List集合过滤(不修改List)
 
 ```java
   private List<Integer> integers = Lists.list(30, 40, 10, 20);
 
   Set<Integer> collect = integers.stream().filter(i -> i > 20).collect(Collectors.toSet());
-
-  assertEquals(Sets.newTreeSet(30, 40), collect
-			
 ```
 
 > list集合计算某一字段的和
@@ -2166,52 +2285,32 @@ BigDecimal amount = personBonusInfoList.stream().map(PersonBonusInfo :: getAmoun
 
 ## Map集合操作
 
->将List分组转化为Map
-
-```java
-Map<类型, List<类型>> map1 = List1.stream().collect(Collectors.groupingBy(实体类 :: 条件属性));
-```
->将List根据条件转换为Map
-
-```java
-Map<String, 实体类> voteMap  = allVoteList.stream().collect(Collectors.toMap(实体::条件, item -> item));
-```
-
-
->Map集合遍历
+### Map遍历
 
 ```java
  //推荐
 for (Map.Entry<类1, List<类2>> entry : map集合.entrySet()) {
-
+     类1 key = entry.getKey();
      List<类2> value = entry.getValue();
-
 }
-```
 
-```java
+//keySet获取map集合key的集合  然后在遍历key
+for(String key:map.keySet()){
+    String value = map.get(key).toString();//
+    System.out.println("key:"+key+" vlaue:"+value);
+}
+
  //Map集合循环遍历二  通过迭代器的方式
   Iterator<Entry<String, Object>> it = map.entrySet().iterator();
-       while(it.hasNext()){
-          Entry<String, Object> entry = it.next();
-           System.out.println("key:"+entry.getKey()+"  key:"+entry.getValue());
-       }
-
-```
-
-```java
- //keySet获取map集合key的集合  然后在遍历key
-for(String key:map.keySet()){
-                String value = map.get(key).toString();//
-                System.out.println("key:"+key+" vlaue:"+value);
+    while(it.hasNext()){
+      Entry<String, Object> entry = it.next();
+       System.out.println("key:"+entry.getKey()+"       key:"+entry.getValue());
 }
-```
 
-```java
 //通过Map.values()遍历所有的value，但不能遍历key
-        for(Object m:map.values()){
-          System.out.println(m);
-        }
+for(Object m:map.values()){
+    System.out.println(m);
+}
 ```
 
 
