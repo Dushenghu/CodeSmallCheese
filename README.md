@@ -392,6 +392,66 @@ public class UuidUtil {
 </dependency>
 ```
 
+### 配置  
+
+#### .yml
+```yml
+logging:
+#logging.config是用来指定项目启动的时候，读取哪个配置文件，这里指定的是日志配置文件，即子module项目根路径下的 logback.xml文件，该文件是日志的主要配置信息。
+  config: /workspace/java/SpringBootWorkSpace/src/main/resources/locbak.xml
+ # level用来配置指定包的路径下应用程序的日志记录，及其日志级别。
+  level:
+    root: info
+    com.springboot.springbootdemo.controller: trace
+    com.springboot.springbootdemo.service: debug
+    com.springboot.springbootdemo.dao: debug
+
+```
+
+#### logback-springboot.xml
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+    <!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径-->
+    <property name="LOG_HOME" value="/SpringBootWorkSpace/SpringBootWorkSpace/logs"/>    <!-- 定义日志格式  -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%thread] [%-30.30logger{30}] %msg%n"/>
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <!-- 按照每天生成日志文件 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!--日志文件输出的文件名-->
+            <FileNamePattern>${LOG_HOME}/SpringBootWorkSpace-Slf4j_%d{yyyy-MM-dd}.log</FileNamePattern>
+            <!--日志文件保留天数-->
+            <MaxHistory>30</MaxHistory>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+        <!--日志文件最大的大小-->
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>10MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <!-- 日志输出级别 -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="root" level="INFO"/>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
+
+```
+
+
 ### 使用
 
 ```java
@@ -1258,7 +1318,277 @@ public static void downloadFile(HttpServletResponse response, String fileName, I
 }
 ```
 
+****
 
+## Mybatis 与 Mybatis-plus
+
+### Mybatis
+#### 简介
+
+> MyBatis 是一款优秀的持久层框架，它支持自定义 SQL、存储过程以及高级映射。MyBatis 免除了几乎所有的 JDBC 代码以及设置参数和获取结果集的工作。MyBatis 可以通过简单的 XML 或注解来配置和映射原始类型、接口和 Java POJO（Plain Old Java Objects，普通老式 Java 对象）为数据库中的记录。
+
+>官方中文文档： https://mybatis.net.cn/
+
+#### 使用
+
+> properties 文件配置 (yml类似)
+
+```properties
+mybatis.type-aliases-package=com.cctc.earm  
+
+mybatis.mapper-locations=classpath*:/mappers/**.xml,classpath*:/mappers/*/**.xml,classpath*:/mappers/*/*/*/**.xml,classpath*:/mappers/*/*/**.xml 
+
+//重要 ！！mapper.mappers=org.xyifp.common.base.CctcMapper,com.cctc.earm.common.base.BatchMapper  
+
+mapper.not-empty=true  
+
+mapper.identity=MYSQL  
+
+mybatis.configuration.mapUnderscoreToCamelCase=true
+
+```
+
+补充：
+```yml
+mybatis-plus:
+  #外部化xml配置
+  config-location: classpath:mybatis-config.xml
+  
+  #指定外部化 MyBatis Properties 配置，通过该配置可以抽离配置，实现不同环境的配置部署
+  configuration-properties: classpath:mybatis/config.properties
+  
+  #xml扫描，多个目录用逗号或者分号分隔（告诉 Mapper 所对应的 XML 文件位置）
+  mapper-locations: classpath*:/mapper/*.xml
+  
+  #MyBaits 别名包扫描路径，通过该属性可以给包中的类注册别名
+  type-aliases-package: 
+net.xinhuamm.noah.api.model.entity,net.xinhuamm.noah.api.model.dto
+  
+  #如果配置了该属性，则仅仅会扫描路径下以该类作为父类的域对象
+  type-aliases-super-type: java.lang.Object
+  #枚举类 扫描路径，如果配置了该属性，会将路径下的枚举类进行注入，让实体类字段能够简单快捷的使用枚举属性
+  type-enums-package: com.baomidou.mybatisplus.samples.quickstart.enums
+  #项目启动会检查xml配置存在(只在开发时候打开)
+  check-config-location: true
+  #SIMPLE：该执行器类型不做特殊的事情，为每个语句的执行创建一个新的预处理语句,REUSE：该执行器类型会复用预处理语句,BATCH：该执行器类型会批量执行所有的更新语句
+  default-executor-type: REUSE
+  configuration:
+    # 是否开启自动驼峰命名规则（camel case）映射，即从经典数据库列名 A_COLUMN（下划线命名） 到经典 Java 属性名 aColumn（驼峰命名） 的类似映射
+    map-underscore-to-camel-case: false
+    # 全局地开启或关闭配置文件中的所有映射器已经配置的任何缓存，默认为 true
+    cache-enabled: false
+    #懒加载
+    aggressive-lazy-loading: true
+    #NONE：不启用自动映射 PARTIAL：只对非嵌套的 resultMap 进行自动映射 FULL：对所有的 resultMap 都进行自动映射
+    auto-mapping-behavior: partial
+    #NONE：不做任何处理 (默认值)WARNING：以日志的形式打印相关警告信息 FAILING：当作映射失败处理，并抛出异常和详细信息
+    auto-mapping-unknown-column-behavior: none
+    #如果查询结果中包含空值的列，则 MyBatis 在映射的时候，不会映射这个字段
+    call-setters-on-nulls: true
+    # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      #表名下划线命名默认true
+      table-underline: true
+      #id类型
+      id-type: auto
+      #是否开启大写命名，默认不开启
+      #capital-mode: false
+      #逻辑已删除值,(逻辑删除下有效) 需要注入逻辑策略LogicSqlInjector 以@Bean方式注入
+      logic-not-delete-value: 0
+      #逻辑未删除值,(逻辑删除下有效)
+      logic-delete-value: 1
+      #数据库类型
+      db-type: sql_server
+```
+
+1. 导入依赖； 
+```java
+<!-- mybatis 依赖 -->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>2.1.1</version>
+        </dependency>
+
+<!-- TKmybatis 依赖 -->
+        <dependency>
+            <groupId>tk.mybatis</groupId>
+            <artifactId>mapper-spring-boot-starter</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+
+```
+
+2. 实体使用 @Table() 绑定数据表； 
+```java
+  @Table(name="mysql_table_name")
+  public class Table{
+	......
+  }
+```
+
+3. 批量处理公共Mapper;
+```java
+//整合批量新增与更新
+public interface BatchMapper<T> extends BatchInsertMapper<T>,BatchUpdateMapper<T> {  
+}
+```
+
+4. 业务Mapper继承公共Mapper;
+```java
+public interface BussinessMapper extends BatchMapper{
+	.....
+}
+```
+
+> 批量新增
+
+```java
+//批量Mapper
+public interface BatchInsertMapper<T> {  
+  
+    /**  
+     * 批量插入  
+     * @param list  
+     * @return  
+     */
+     //指定主键  
+    @Options(keyProperty = "id")  
+    //设置批量插入工具,使用动态sql
+    @InsertProvider(type = BatchInsertProvider.class, method = "dynamicSQL")  
+    //定义调用方法
+    int batchInsert(List<T> list);  
+    
+}
+
+```
+
+```java
+//批量插入工具类(实质：拼动态SQL)
+public class BatchInsertProvider extends MapperTemplate{
+	
+	//构造函数
+	public BatchInsertProvider(Class<?> mapperClass, MapperHelper mapperHelper) {  
+    super(mapperClass, mapperHelper); 
+    }
+
+	/**  
+     *  批量插入  
+     * @param statement  
+     * @return  
+     */  
+    public String batchInsert(MappedStatement statement){  
+  
+        //获取实体类对应的Class对象  
+        Class entityClass = getEntityClass(statement);  
+        
+        //开始拼sql  
+        StringBuilder sql = new StringBuilder();  
+        
+        //INSERT INTO 表名  
+        sql.append(SqlHelper.insertIntoTable(entityClass, tableName(entityClass)));  
+        
+        //(所有列，以逗号隔开)  
+        sql.append(SqlHelper.insertColumns(entityClass, false, false, false));  
+        sql.append(" VALUES ");  
+        
+        //遍历实体集合  
+        sql.append("<foreach collection=\"list\" item=\"record\" separator=\",\" >");  
+        sql.append("<trim prefix=\"(\" suffix=\")\" suffixOverrides=\",\">");  
+        
+        //获取全部列  
+        Set<EntityColumn> columnList = EntityHelper.getColumns(entityClass);  
+        
+        //遍历实体所有字段  
+        for (EntityColumn column : columnList) {  
+            if (column.isInsertable()) {  
+                //出现类型com.microsoft.sqlserver.jdbc.SQLServerException: 操作数类型冲突: varbinary  
+                if(column.getJavaType() == Double.class){  
+                    //返回格式如:#{record.id,javaType=java.lang.String}  
+                    String record = column.getColumnHolder("record");  
+                    record = record.substring(0,record.length()-1)+",jdbcType=DECIMAL"+"}";  
+                    sql.append(record+ ",");  
+                }else {  
+                    sql.append(column.getColumnHolder("record") + ",");  
+                }  
+            }        }        sql.append("</trim>");  
+        sql.append("</foreach>");  
+//        logger.info("{}", sql.toString());  
+        return sql.toString();  
+    }
+
+}
+
+```
+
+> 批量更新
+
+```java
+//批量Mapper
+public interface BatchUpdateMapper<T> {  
+  
+    /**  
+     * 批量更新  
+     * @param list  
+     * @return  
+     */  
+    @Options(keyProperty = "id")  
+    @UpdateProvider(type = BatchUpdateProvider.class, method = "dynamicSQL")  
+    int batchUpdate(List<T> list);  
+}
+```
+
+```java
+public class BatchUpdateProvider extends MapperTemplate {  
+  
+    public BatchUpdateProvider(Class<?> mapperClass, MapperHelper mapperHelper) {  
+        super(mapperClass, mapperHelper);  
+    }  
+  
+     /**  
+     * 批量更新  
+     * @param statement 
+     * @return  
+     */   
+    public String batchUpdate(MappedStatement statement){  
+  
+        //获取实体类对应的Class对象  
+        Class entityClass = getEntityClass(statement); 
+         
+        //开始拼sql  
+        StringBuilder sql = new StringBuilder();  
+        
+        //  
+        sql.append(SqlHelper.updateTable(entityClass, tableName(entityClass)));  
+//        sql.append(SqlHelper.updateSetColumns(entityClass, tableName(entityClass), false, false));  
+        sql.append("<trim prefix=\"set\" suffixOverrides=\",\">");  
+        
+        //获取全部列  
+        Set<EntityColumn> columnList = EntityHelper.getColumns(entityClass);  
+        for (EntityColumn column : columnList) {  
+            if (!column.isId() && column.isUpdatable()) {  
+                sql.append("  <trim prefix=\""+column.getColumn()+" = case\" suffix=\"end,\">");  
+                sql.append("    <foreach collection=\"list\" item=\"i\" index=\"index\">");  
+                sql.append("         when id = #{i.id} then #{i."+column.getProperty()+"}");  
+                sql.append("    </foreach>");  
+                sql.append("  </trim>");  
+            }  
+        }  
+        sql.append("</trim>");  
+        sql.append("WHERE");  
+        sql.append(" id IN ");  
+        sql.append("<trim prefix=\"(\" suffix=\")\">");  
+        sql.append("<foreach collection=\"list\" separator=\", \" item=\"i\" index=\"index\" >");  
+        sql.append("#{i.id}");  
+        sql.append("</foreach>");  
+        sql.append("</trim>");  
+//        logger.info("{}", sql.toString());  
+        return sql.toString();  
+    }  
+}
+```
 
 ****
 
@@ -1322,115 +1652,6 @@ public static void downloadFile(HttpServletResponse response, String fileName, I
 </if>
 ```
 
-
-### 模板SQL操作
-
->导入依赖
-
-```java
-<!-- mybatis 依赖 -->
-        <dependency>
-            <groupId>org.mybatis.spring.boot</groupId>
-            <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>2.1.1</version>
-        </dependency>
-
-<!-- TKmybatis 依赖 -->
-        <dependency>
-            <groupId>tk.mybatis</groupId>
-            <artifactId>mapper-spring-boot-starter</artifactId>
-            <version>1.1.0</version>
-        </dependency>
-
-```
-
->Mapper接口(绑定SQL模板)
-
-```java
-	public interface SQLMapper<T>{
-
-		@Options(keyProperty = "主键",keyColumn = "数据库字段名")
-
-		//绑定SQL模板
-		@InsertProvider( type = 模板.class, method = "dynamicSQL")
-
-		//方法
-		int batchInsert(List<T> list);
-
-	}
-
-```
-
->SQL模板
-
-```java
-	public class BatchSQLProvider extends MapperTemplate {
-
-		//实现接口
-		public BatchSQLProvider(Class<?> mapperClass, MapperHelper mapperHelper) {
-
-        super(mapperClass, mapperHelper);
-    	}
-
-    	//SQL操作
-    	//思路：利用 StringBuilder 拼写SQL
-
-    	public String batchInsert(MappedStatement statement){
-
-        //获取实体类对应的Class对象
-        Class entityClass = getEntityClass(statement);
-
-        //开始拼sql
-        StringBuilder sql = new StringBuilder();
-
-        //INSERT INTO 表名
-        sql.append(SqlHelper.insertIntoTable(entityClass, tableName(entityClass)));
-        
-        //(所有列，以逗号隔开)
-        sql.append(SqlHelper.insertColumns(entityClass, false, false, false));
-        sql.append(" VALUES ");
-        
-        //遍历实体集合
-        sql.append("<foreach collection=\"list\" item=\"record\" separator=\",\" >");
-        sql.append("<trim prefix=\"(\" suffix=\")\" suffixOverrides=\",\">");
-        
-        //获取全部列
-        Set<EntityColumn> columnList = EntityHelper.getColumns(entityClass);
-        
-        //遍历实体所有字段
-        for (EntityColumn column : columnList) {
-
-            if (column.isInsertable()) {
-
-                //出现类型com.microsoft.sqlserver.jdbc.SQLServerException: 操作数类型冲突: varbinary
-                if(column.getJavaType() == Double.class){
-
-                    //返回格式如:#{record.id,javaType=java.lang.String}
-                    String record = column.getColumnHolder("record");
-                    record = record.substring(0,record.length()-1)+",jdbcType=DECIMAL"+"}";
-
-                    sql.append(record+ ",");
-
-                }else {
-
-                    sql.append(column.getColumnHolder("record") + ",");
-
-                }
-
-            }
-        }
-
-        sql.append("</trim>");
-        sql.append("</foreach>");
-
-        //logger.info("{}", sql.toString());
-        return sql.toString();
-    }
-
- }
-
-
-```
 
 ### SQL连接
 
