@@ -1741,6 +1741,8 @@ public class BatchUpdateProvider extends MapperTemplate {
 
 #### 使用
 
+###### 单个方法
+
 > 导入依赖
 
 ```xml
@@ -1793,7 +1795,34 @@ public class SampleTest {
 }
 ```
 
+###### 批量方法
 
+> 批量方法  ： 使用 IService(T)  接口
+
+> 1.继承接口
+
+```java
+public interface MyBatisPlusService extends IService<News> {  
+}
+```
+
+> 2.实现
+
+```java
+@Service  
+public class MyBatisPlusImpl extends ServiceImpl<MyBatisPlusMapper, News> implements MyBatisPlusService  {  
+}
+```
+
+> 3.调用
+
+```java
+@Resource
+MyBatisPlusService  myBatisPlusService
+
+myBatisPlusService.方法();
+
+```
 
 
 ****
