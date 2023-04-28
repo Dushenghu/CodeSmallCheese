@@ -12,6 +12,8 @@
 
 > Java 全栈知识体系 : https://www.pdai.tech/
 
+> Idea 常用快捷键大全+ Gif 展示 ： https://zhuanlan.zhihu.com/p/515418210
+
 
 ***
 
