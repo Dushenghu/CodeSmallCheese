@@ -2209,7 +2209,7 @@ show slave status
 ```
 
 
-###  Springboot 中设置多数据源
+###  Springboot 中设置多数据源(mybatis-plus)
 
 #### YML配置文件
 
