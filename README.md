@@ -644,6 +644,19 @@ public class XXXXController extends BaseController {
 
 >@Resource  &  @AutoWired : @Autowired注入的时候要确保只有一个实现类 
 
+> @PostMapping(value = "XXXXXXX")
+> 接收参数(传递对象)： @RequestBody  Object  object  
+> 接收参数(url拼接？的字符串)： @RequestParam("变量名")  
+
+> @GetMapping(value = "XXXXXXX")
+> 接收参数(传递对象)：  Object  object  
+> 接收参数(url拼接？的字符串)： @RequestParam("变量名") 
+> @GetMapping(value = "/XXXXXXX/{变量名}")
+> 接收参数： @PathVariable("变量名")
+
+> @Transactional  
+> 主要：保证同一方法内多个数据库操作要么同时成功，要么同时失败
+
 ### 父子项目搭建
 
 > 父POM
@@ -1743,6 +1756,11 @@ public class BatchUpdateProvider extends MapperTemplate {
 
 #### 使用
 
+###### 条件构造器
+
+> 官方文档： https://baomidou.com/pages/10c804/#abstractwrapper
+
+
 ###### 单个方法
 
 > 导入依赖
@@ -1825,6 +1843,33 @@ MyBatisPlusService  myBatisPlusService
 myBatisPlusService.方法();
 
 ```
+
+****
+## Fastdfs-文件服务器
+
+### 简介
+
+> FastDFS 是一个开源的高性能分布式文件系统（DFS）。 它的主要功能包括：**文件存储**，**文件同步**和**文件访问**，以及高容量和**负载平衡**。主要解决了海量数据存储问题，特别适合以中小文件（建议范围：4KB < file_size <500MB）为载体的在线服务。
+
+> FastDFS 系统有三个角色：跟踪服务器(Tracker Server)、存储服务器(Storage Server)和客户端(Client)
+> 
+> 1.**Tracker Server**：跟踪服务器，主要做调度工作，起到均衡的作用；负责管理所有的 storage server和 group，每个 storage 在启动后会连接 Tracker，告知自己所属 group 等信息，并保持周期性心跳。    
+   Tracker是FastDFS的协调者，负责管理所有的storage server和group，每个storage在启动后会连接Tracker，告知自己所属的group等信息，并保持周期性的心跳，tracker根据storage的心跳信息，建立 group==>[storage server list] 的映射表。
+   Tracker需要管理的元信息很少，会全部存储在内存中；另外tracker上的元信息都是由storage汇报的信息生成的，本身不需要持久化任何数据，这样使得tracker非常容易扩展，直接增加tracker机器即可扩展为tracker cluster来服务，cluster里每个tracker之间是完全对等的，所有的tracker都接受stroage的心跳信息，生成元数据信息来提供读写服务。 
+   
+>  2.**Storage Server**：存储服务器，主要提供容量和备份服务；以 group 为单位，每个 group 内可以有多台 storage server，数据互为备份。
+>  Storage server（后简称storage）以组（卷，group或volume）为单位组织，一个group内包含多台storage机器，数据互为备份，存储空间以group内容量最小的storage为准，所以建议group内的多个storage尽量配置相同，以免造成存储空间的浪费。
+   以group为单位组织存储能方便的进行应用隔离、负载均衡、副本数定制（group内storage server数量即为该group的副本数），比如将不同应用数据存到不同的group就能隔离应用数据，同时还可根据应用的访问特性来将应用分配到不同的group来做负载均衡；缺点是group的容量受单机存储容量的限制，同时当group内有机器坏掉时，数据恢复只能依赖group内地其他机器，使得恢复时间会很长。
+   group内每个storage的存储依赖于本地文件系统，storage可配置多个数据存储目录，比如有10块磁盘，分别挂载在/data/disk1-/data/disk10，则可将这10个目录都配置为storage的数据存储目录。
+   storage接受到写文件请求时，会根据配置好的规则（后面会介绍），选择其中一个存储目录来存储文件。为了避免单个目录下的文件数太多，在storage第一次启动时，会在每个数据存储目录里创建2级子目录，每级256个，总共65536个文件，新写的文件会以hash的方式被路由到其中某个子目录下，然后将文件数据直接作为一个本地文件存储到该目录中。
+
+
+
+
+
+
+
+
 
 
 ****
@@ -2163,6 +2208,54 @@ start slave,
 show slave status
 ```
 
+
+###  Springboot 中设置多数据源
+
+#### YML配置文件
+
+```yml
+datasource:  
+  master:  
+    url: jdbc:mysql://localhost:3306/sms?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&useTimezone=true&serverTimezone=GMT%2B8&allowMultiQueries=true 
+    username: root   
+    password: 123456  
+    db-name: sms  
+    driver-class-name: com.mysql.cj.jdbc.Driver  
+    jdbc-from-ds: true  
+    select-datasource-sql: SELECT CONN_NAME poolName,DRIVER_CLASS driverClassName,JDBC_URL url,USER_NAME userName,PASSWORD password  FROM `SYS_DATASOURCE` WHERE CONN_NAME != 'master'  
+  slave:  
+    url: jdbc:mysql://192.168.127.60:13333/sms_busi?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&useTimezone=true&serverTimezone=GMT%2B8&allowMultiQueries=true  
+    username: sms_busi  
+    password: Sms_SI!  
+    db-name: sms_busi  
+    driver-class-name: com.mysql.cj.jdbc.Driver  
+    jdbc-from-ds: true  
+    select-datasource-sql: SELECT CONN_NAME poolName,DRIVER_CLASS driverClassName,JDBC_URL url,USER_NAME userName,PASSWORD password  FROM `SYS_DATASOURCE` WHERE CONN_NAME != 'master'  
+    druid: # 全局druid参数，绝大部分值和默认保持一致。(现已支持的参数如下,不清楚含义不要乱设置)  
+      initial-size: 1  
+      min-idle: 1  
+      maxActive: 30  
+      maxWait: 30000  
+      removeAbandoned: false  
+      logAbandoned: true  
+      timeBetweenEvictionRunsMillis: 30000  
+      maxEvictableIdleTimeMillis: 180000  
+      minEvictableIdleTimeMillis: 60000  
+      phyTimeoutMillis: 3600000  
+      testOnBorrow: false  
+      testOnReturn: false  
+      testWhileIdle: true  
+      validationQuery: SELECT 1  
+      keepAlive: true  
+      filters: stat,slf4j  
+      connectionProperties: druid.stat.mergeSql\=true;druid.stat.slowSqlMillis\=5000  
+      removeAbandonedTimeoutMillis: 1800000
+```
+
+#### @DS("数据源名称")
+
+> @DS() 要用在实现类或者实现类方法上
+>  调用时，使用  service 层面的方法
 
 -----
 
@@ -2739,6 +2832,13 @@ BoList.removeIf(e -> Strings.isNullOrEmpty(e.getProjectCode()));
 ```java
 // BigDecimal类型
 BigDecimal amount = personBonusInfoList.stream().map(PersonBonusInfo :: getAmount).reduce(BigDecimal.ZERO,BigDecimal::add);
+```
+
+> list集合 根据对象某一属性 合并为以某字符分割的字符串
+> eg:   1,2,3,4,5
+
+```java
+String s = list.stream().map(对象::属性).collect(Collectors.joining("分隔符"));
 ```
 
 ## Map集合操作
