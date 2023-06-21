@@ -2731,6 +2731,10 @@ List<Object> descList = list.stream().sorted(Comparator.comparing(Object::属性
 	// 2.直接降序
 List<Object> descList = list.stream().sorted(Comparator.comparing(Object::属性条件,Comparator.reverseOrder())).collect(Collectors.toList());	
 
+//基于 jdk1.8 工具类 直接排序源list集合（不产生新的集合）
+Collections.sort(list(),Comparator.comparing(对象::排序条件));
+
+
 ```
 
 > 多条件
