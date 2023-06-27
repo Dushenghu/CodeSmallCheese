@@ -1760,6 +1760,34 @@ public class BatchUpdateProvider extends MapperTemplate {
 
 > 官方文档： https://baomidou.com/pages/10c804/#abstractwrapper
 
+> 构造器方式1(单对象)
+
+```java
+//查询
+QueryWrapper<Object> queryRecordDetailWrapper = new QueryWrapper<>();  
+queryRecordDetailWrapper.eq("数据库字段1",value)  
+        .eq("数据库字段2",value)  
+        .eq("数据库字段3",value);  
+smsPlanStartRecordDetailMapper.selectOne(queryRecordDetailWrapper);
+
+//更新
+UpdateWrapper<Object> wrapper = new UpdateWrapper<>();  
+wrapper.set("数据库字段1",value).set("数据库字段2",value).eq("数据库字段3",value));  
+smsFileManageService.update(wrapper);
+```
+
+> 构造器方式2(lambda)
+
+```java 
+//1（update 类似）
+LambdaQueryWrapper<Object> lw1 = new LambdaQueryWrapper<>();  
+lw1.eq(Object::属性, manage.getViolId());  // 属性要使用 @TableField("数据库字段名") 进行映射
+violationUnitService.remove(lw1);
+
+//2(query 类似)
+UpdateWrapper<User> updateWrapper = new UpdateWrapper<>(); updateWrapper.lambda() .eq(User::getAge, 30) .setSql("email = 'le30@duck.top'"); 
+userService.update(updateWrapper);
+```
 
 ###### 单个方法
 
@@ -2679,7 +2707,7 @@ Nginx的进程模型如图所示：
 
 ## List 集合操作
 
-***Key :  Collectors
+***Key :  Collectors 
 
 > fliter    过滤
 > map     运算
