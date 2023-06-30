@@ -1466,7 +1466,7 @@ public static void downloadFile(HttpServletResponse response, String fileName, I
 
 #### 使用
 
-> properties 文件配置 (yml类似)
+> properties 文件配置 
 
 ```properties
 mybatis.type-aliases-package=com.cctc.earm  
@@ -1480,6 +1480,79 @@ mapper.not-empty=true
 mapper.identity=MYSQL  
 
 mybatis.configuration.mapUnderscoreToCamelCase=true
+
+```
+
+> yml 文件配置
+
+```yml
+#正常使用基础配置
+
+mybatis-plus:
+  # 包扫描路径(当前项目的实体类所在位置。别名包扫描路径，通过该属性可以给包中的类注册别名，多个路径用逗号分割)
+  type-aliases-package: com.xxx.xxx.xxx.model.entity
+  # xml扫描，多个目录用逗号或者分号分隔(告诉 Mapper 所对应的 XML 文件位置)
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    # 是否开启自动驼峰命名规则映射:从数据库列名到Java属性驼峰命名的类似映射
+    map-underscore-to-camel-case: true
+    # 如果查询结果中包含空值的列，则 MyBatis 在映射的时候，不会映射这个字段
+    # 允许在resultType="map"时映射null值
+    call-setters-on-nulls: true
+    # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用(包括执行结果)
+    # log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 主键类型 AUTO:"数据库ID自增" 
+      # INPUT:"用户输入ID",
+      # ID_WORKER:"全局唯一ID (数字类型唯一ID)", 
+      # UUID:"全局唯一ID UUID";
+      id-type: auto
+      # 字段策略 IGNORED:"忽略判断"  NOT_NULL:"非 NULL 判断")  NOT_EMPTY:"非空判断"
+      field-strategy: NOT_EMPTY
+      # 数据库类型
+      db-type: MYSQL
+      # 逻辑删除配置
+      # 删除前
+      logic-not-delete-value: 0
+      # 删除后
+      logic-delete-value: 1
+      # 数据库表名的前缀
+      table-prefix: t_
+      
+#扩展配置
+mybatis-plus:
+  # 如果配置了该属性，则仅仅会扫描路径下以该类作为父类的域对象
+  type-aliases-super-type: com.xxx.xxx
+  # 枚举类 扫描路径，如果配置了该属性，会将路径下的枚举类进行注入，让实体类字段能够简单快捷的使用枚举属性
+  type-enums-package: com.xxx.xxx.model
+  # 项目启动会检查xml配置存在（只在开发时打开）
+  check-config-location: true
+  # SIMPLE：该执行器类型不做特殊的事情，为每个语句的执行创建一个新的预处理语句，REUSE：改执行器类会复用预处理语句，BATCH：该执行器类型会批量执行所有的更新语句
+  executor-type: REUSE
+  configuration:
+    # 全局地开启或关闭配置文件中的所有映射器已经配置的任何缓存，默认为 true
+    cache-enabled: true
+    # 懒加载
+    aggressive-lazy-loading: true
+    # MyBatis 自动映射策略，通过该配置可指定 MyBatis 是否并且如何来自动映射数据表字段与对象的属性
+    # none：不启用自动映射 
+    # partial：只对非嵌套的 resultMap 进行自动映射 
+    # full：对所有的 resultMap 都进行自动映射
+    auto-mapping-behavior: partial
+    # MyBatis 自动映射时未知列或未知属性处理策略，通过该配置可指定 MyBatis 在自动映射过程中遇到未知列或者未知属性时如何处理
+    # none：不做任何处理 (默认值)
+    # warning：以日志的形式打印相关警告信息 
+    # failing：当作映射失败处理，并抛出异常和详细信息
+    auto-mapping-unknown-column-behavior: none
+    # 是否允许映射结果为多个数据集
+    multiple-result-sets-enabled: false
+  global-config:
+    db-config:
+      # 表名下划线命名默认为true
+      table-underline: false
+      # 是否开启大写命名，默认不开启
+      capital-mode: false
 
 ```
 
