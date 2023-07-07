@@ -1507,6 +1507,7 @@ mybatis-plus:
       # INPUT:"用户输入ID",
       # ID_WORKER:"全局唯一ID (数字类型唯一ID)", 
       # UUID:"全局唯一ID UUID";
+      # 雪花算法：assign-id
       id-type: auto
       # 字段策略 IGNORED:"忽略判断"  NOT_NULL:"非 NULL 判断")  NOT_EMPTY:"非空判断"
       field-strategy: NOT_EMPTY
@@ -1974,6 +1975,679 @@ myBatisPlusService.方法();
 
 
 ****
+
+
+# ☕咖啡 小芝士
+
+ ## 各种锁
+
+### 简介
+
+> https://www.cnblogs.com/jyroy/p/11365935.html
+
+
+## List 集合操作
+
+***Key :  Collectors 
+
+> fliter    过滤
+> map     运算
+> distinct   去重
+
+> 整理 list map  --->  steam  collect  map
+
+### list 遍历
+
+```java
+// for 循环
+for(int i = 0;i<list.size();i++){
+	sout(list.get(i));
+}
+
+// 对象遍历
+for(Object ob : list){
+	sout(ob);
+}
+
+！！// Lambda 表达式
+list.forEach( ob -> {
+	sout(ob);
+})
+
+// 迭代器遍历
+Iterator<类型> iterator = list.iterator();
+while(iterator.hasNext()){
+	类型 ob = iterator.next();
+	sout(ob);
+}
+
+// 打印语法糖
+list.forEach(System.out::println);
+
+```
+
+### list排序
+
+> 单条件
+
+```java
+// 单条件升序
+List<Object> ascList = list.stream().sorted(Comparator.comparing(Object::属性条件)).collect(Collectors.toList());
+
+// 单条件降序
+	// 1.先升序再逆置
+List<Object> descList = list.stream().sorted(Comparator.comparing(Object::属性条件).reversed()).collect(Collectors.toList());
+	// 2.直接降序
+List<Object> descList = list.stream().sorted(Comparator.comparing(Object::属性条件,Comparator.reverseOrder())).collect(Collectors.toList());	
+
+//基于 jdk1.8 工具类 直接排序源list集合（不产生新的集合）
+Collections.sort(list(),Comparator.comparing(对象::排序条件));
+
+
+```
+
+> 多条件
+
+```java 
+// 属性一升序+属性二降序
+List<Object> ascList = list.stream().sorted(Comparator.comparing(Object::属性条件1))
+.thenComparing(Object::属性条件2,Comparator.reverseOrder())
+.collect(Collectors.toList());
+```
+
+###  list转Map
+
+> 1 : 1 的 K-V 结构    #toMap
+
+```java
+/**
+*  list -> map 
+*  Tip: 使用 toMap 时，当集合中对象有重复的key,会报 Duplicate key....
+*  Collectors.toMap(Key::key,Value::value,Key重复解决方式)
+*  可用 （k1,k2）-> k1 设置，当有重复的key,会保留 k1 ,舍弃 k2
+*/
+Map<分组属性类型,List<Object>> map = list.stream()
+.collect(Collectors.toMap(Object::分组属性, a -> a,(k1,k2) -> k1));
+```
+
+> 1: n 的 K-V 结构   #groupingBy
+
+```java
+//单属性分组
+Map<分组属性类型,List<Object>> map = lsit.stream()
+.collcet(Collectors.groupingBy( Object :: 分组属性 ))；
+
+//多属性分组
+Map<分组属性类型,List<Object>> map = lsit.stream()
+.collcet(Collectors.groupingBy( Ob -> {
+	ob.分组属性1 + "_" + ob.分组属性2
+} ))；
+
+//条件判断
+Map<分组属性类型,List<Object>> map = lsit.stream()
+.collcet(Collectors.groupingBy( ob -> {
+	if(ob.分组属性的分组条件1){
+		return 组别1<分组属性类型>
+	}else if(ob.分组属性的分组条件2){
+		return 组别2<分组属性类型>
+	}else{
+		return 组别3<分组属性类型>
+	}
+} ))；
+
+//多级分组 （实质：双参数复合 Collectors.groupingBy（））
+Map<分组属性类型,List<Object>> map = lsit.stream()
+.collcet(Collectors.groupingBy(
+	object :: 分组属性1, // 一级分组
+	// 二级分组
+	Collectors.groupingBy( ob -> {
+	ob.属性
+	})
+))；
+
+//求每组数量
+Map<分组属性类型,Long> map = lsit.stream()
+.collcet(Collectors.groupingBy( Object :: 分组属性, Collectors.counting() ))；
+
+//分组求和
+Map<分组属性类型,Double> map = lsit.stream()
+.collcet(Collectors.groupingBy( Object :: 分组属性, Collectors.summingDouble(Object :: 求和属性) ))；
+
+
+
+```
+
+
+### 其他
+
+> 根据某一属性提取为List
+
+```java
+List<类型> applyTypeList = list.stream().map(实体类 :: 条件).distinct().collect(Collectors.toList());
+```
+
+>从List集合中去除元素(会修改List)
+
+```java
+BoList.removeIf(e -> Strings.isNullOrEmpty(e.getProjectCode()));
+```
+
+>List集合过滤(不修改List)
+
+```java
+  private List<Integer> integers = Lists.list(30, 40, 10, 20);
+
+  Set<Integer> collect = integers.stream().filter(i -> i > 20).collect(Collectors.toSet());
+
+  //当过滤条件是字符串时  (大 > 小; 小 < 大; 相等 = )
+      filter（object -> s1.compareTo(object.属性) > 0)
+```
+
+> list集合计算某一字段的和
+
+```java
+// BigDecimal类型
+BigDecimal amount = personBonusInfoList.stream().map(PersonBonusInfo :: getAmount).reduce(BigDecimal.ZERO,BigDecimal::add);
+```
+
+> list集合 根据对象某一属性 合并为以某字符分割的字符串
+> eg:   1,2,3,4,5
+
+```java
+String s = list.stream().map(对象::属性).collect(Collectors.joining("分隔符"));
+```
+
+## Map集合操作
+
+### Map遍历
+
+```java
+ //推荐
+for (Map.Entry<类1, List<类2>> entry : map集合.entrySet()) {
+     类1 key = entry.getKey();
+     List<类2> value = entry.getValue();
+}
+
+//keySet获取map集合key的集合  然后在遍历key
+for(String key:map.keySet()){
+    String value = map.get(key).toString();//
+    System.out.println("key:"+key+" vlaue:"+value);
+}
+
+ //Map集合循环遍历二  通过迭代器的方式
+  Iterator<Entry<String, Object>> it = map.entrySet().iterator();
+    while(it.hasNext()){
+      Entry<String, Object> entry = it.next();
+       System.out.println("key:"+entry.getKey()+"       key:"+entry.getValue());
+}
+
+//通过Map.values()遍历所有的value，但不能遍历key
+for(Object m:map.values()){
+    System.out.println(m);
+}
+```
+
+
+## 数据类型的相关处理
+
+### String 字符串
+
+>字符串截取
+
+```java
+String S1 = S2.substring(S2.length() - 保留位数);
+```
+
+>数字补位
+
+```java
+// 0 - 补充数； 3 - 补充位数； d - 实数；
+String.format("%03d",num)     
+```
+
+>.equals()
+
+```java
+常量.equals(变量)    //防止出现空指针异常
+```
+
+> .compareTo()
+
+```java
+// i > 0 :大 > 小; 
+// i < 0 :小 < 大; 
+// i = 0 :相等 =
+ int i  = s1.compareTo(object.属性)
+```
+
+>字符串划分
+
+:star2:  split()
+
+``` java
+//语法 (regex - 正则表达式分隔符；limit - 分割的份数)
+ public String[] split(String regex, int limit)
+```
+
+:star2: indexOf()
+
+```java
+//形式：
+
+//返回指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
+public int indexOf(int ch)
+
+//返回从 fromIndex 位置开始查找指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
+public int indexOf(int ch, int fromIndex) 
+
+//返回指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
+int indexOf(String str)
+
+//返回从 fromIndex 位置开始查找指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
+int indexOf(String str, int fromIndex)
+
+//语法:
+ch - 字符，Unicode 编码;
+fromIndex - 开始搜索的索引位置，初始为0;
+str -- 要搜索的子字符串。
+
+public int indexOf(int ch )
+
+public int indexOf(int ch, int fromIndex)
+
+int indexOf(String str)
+
+int indexOf(String str, int fromIndex)
+
+```
+
+### StringBuffer StringBuilder
+
+> StringBuffer对象代表一个字符序列可变的字符串，当一个StringBuffer被创建以后，通过StringBuffer提供的append()、insert()、reverse()、setCharAt()、setLength()等方法可以改变这个字符串对象的字符序列，但都不会产生新的对象。通过StringBuffer生成的字符串，可以调用toString()方法将其转换为一个String对象。
+
+>StringBuilder类也代表可变字符串对象。实际上，StringBuilder和StringBuffer基本相似，他们的原理与操作一样，两个类的构造器和方法也基本相同。不同的是：StringBuffer是线程安全的，而StringBuilder则没有实现线程安全功能，所以性能略高。
+
+
+### BigDecimal
+```java
+	// 计算某一bigDecimal属性和
+	BigDecimal sum = personBonusList.stream().map(e -> {  
+    if (null == e.getAmountCount()) {  
+        return BigDecimal.ZERO;  
+    } else {  
+        return e.getAmountCount();  
+    }  
+}).reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2,BigDecimal.ROUND_HALF_UP);
+```
+
+###  LocalDateTime  与 LocalDate   与 LocalTime
+```java
+==================== 基本用法 =======================
+	
+	//当前日期时间
+	LocalDateTime now = LocalDateTime.now();
+	
+	//当前日期       
+	LocalDate localDate = localDate.now();
+    
+==================== 相关转换 =======================	
+
+	// 日期时间 --> 日期
+	LocalDate localDate = LocalDateTime.toLocalDate();
+	// 日期时间 --> 时间
+	LocalTime localTime = localDateTime.toLocalTime();
+
+//LocalDate常用方法(其余两个都相似)
+1.获取当月第一天和最后一天
+        LocalDate now = LocalDate.now();
+        LocalDate firstDay = now.with(TemporalAdjusters.firstDayOfMonth()); //当月第一天
+        LocalDate lastDay = now.with(TemporalAdjusters.lastDayOfMonth()); //当月最后一天
+        
+2.日期加减  
+minusXXX：减  
+[minusDays(long) minusMonths(long) minusWeeks(long) minusYears(long) ]
+plusXXX：加
+[plusDays(long) plusMonths(long) plusWeeks(long) plusYears(long) ]
+
+3.日期比较
+	相等：isEqual()
+	大于：isAfter()  
+	小于：isBefore()
+
+4.分别获取年月日
+
+	int year = now.getYear();
+	int monthValue = now.getMonthValue();
+	int dayOfMonth = now.getDayOfMonth();
+
+
+5.两个日期相差多少使用Period的静态方法between()
+
+public static Period between(LocalDate startDateInclusive, LocalDate endDateExclusive) {
+    return startDateInclusive.until(endDateExclusive);
+}
+
+LocalDate有两个until方法：
+①public Period until(ChronoLocalDate endDateExclusive)
+②public long until(Temporal endExclusive, TemporalUnit unit)
+以上两个方法都是参数-方法调用者，第一个方法将结果组装成Period对象，可以用getXXX方法获取对应的数字，如getMonths；第二个方法有一个参数unit，它表示将结果转换成什么，如ChronoUnit.DAYS是将结果转换成天。
+ChronoUnit是TemporalUnit 的实现类。
+
+6.修改日期  
+withXXX：将对应的位置修改为指定的数字  
+例:将当前年修改为2021，月修改为2，其他不变：LocalDate.now().withMonth(2).withYear(2021)
+
+==================== 相关补充 =======================
+1.
+	Date date = new Date();
+	Instant instant = date.toInstant();
+	//Instant.now()与new Date().toInstant()的结果一样，时间戳
+	Instant now = Instant.now(); 
+	//时区，zoneId = Asia/Shanghai
+	ZoneId zoneId = ZoneId.systemDefault(); 
+	ZonedDateTime zonedDateTime = instant.atZone(zoneId);
+	LocalDate localDate = zonedDateTime.toLocalDate();
+	LocalTime localTime = zonedDateTime.toLocalTime();
+	LocalDateTime localDateTime = zonedDateTime.toLocalDateTime();
+
+2.
+	LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, zoneId);
+	LocalDate localDate = localDateTime.toLocalDate();
+	LocalTime localTime = localDateTime.toLocalTime();
+
+3.组成工具方法：
+
+public LocalDateTime getLocalDateTime(Date date) {
+	return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+}
+
+4.LocalDate、LocalTime、LocalDateTime转Date
+
+	LocalDateTime now = LocalDateTime.now();
+	ZoneId zoneId = ZoneId.systemDefault();
+	LocalDateTime localDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.now());
+	Instant instant = now.atZone(zoneId).toInstant();
+	Date date = Date.from(instant);
+
+5.格式化
+
+TemporalAccessor yyyyMM = DateTimeFormatter.ofPattern("yyyyMM").parse("202302");
+LocalDate of = LocalDate.of(yyyyMM.get(ChronoField.YEAR), yyyyMM.get(ChronoField.MONTH_OF_YEAR),1);
+System.out.println(of);  //2023-02-01
+
+//LocalDate
+LocalDate localDate = LocalDate.of(2014, 2, 2);
+String format = localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+LocalDate parse = LocalDate.parse("2018-06-06", DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+//LocalDateTime
+LocalDateTime localDateTime = LocalDateTime.of(localDate, LocalTime.of(10, 10, 10));
+String format1 = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+LocalDateTime parse1 = localDateTime.parse("2018-06-06 10:10:10", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+```
+
+
+## Lambda 表达式 ( -> )
+
+### 简介
+
+> “强调做什么 而不是以什么形式做”
+
+### 格式
+
+```java
+//标准格式：
+(参数类型 参数名称) ‐> { 代码语句 }
+
+//省略格式：
+可省略的内容：
+1.参数列表：括号中参数列表的数据类型可以省略不写 (因为在接口里已经定义了类型);
+2.参数列表：括号中的参数如果只有一个 那么类型和()都可以省略;
+3.代码：如果{}中的代码只有一行 那么无论是否有返回值 可以省略{}和return和分号(但要省略必须一起省略);
+```
+
+### 使用
+
+> 1. 无参无返回值
+
+```java
+// 调用invokeCook()方法 传递Cook接口的匿名内部类对象
+        invokeCook(new Cook() {
+            @Override
+            public void makeFood() {
+                System.out.println("开饭了");
+            }
+        });
+
+        // 使用Lambda表达式简化匿名内部类的书写
+        invokeCook(() -> {
+            System.out.println("开饭了");
+        });
+```
+
+> 2.有参数有返回值
+
+```java
+实体对象类：
+       // 升序操作
+        Arrays.sort(arr, new Comparator<Person>() {
+            @Override
+            public int compare(Person o1, Person o2) {
+                return o1.getAge()-o2.getAge();
+            }
+        });
+
+        // 使用Lambda表达式简化匿名内部类的书写
+        Arrays.sort(arr,(Person o1, Person o2) -> {
+            return o1.getAge()-o2.getAge();
+        });
+
+计算类：
+     // 调用方法 参数是一个接口 可以使用匿名内部类
+        invokeCalc(1, 2, new Calculate() {
+            @Override
+            public int calc(int a, int b) {
+                return a+b;
+            }
+        });
+
+        // 使用Lambda表达式简化匿名内部类的书写
+        invokeCalc(1,2,(int a,int b) -> {
+            return a+b;
+        });
+```
+
+
+
+
+
+## 实体类
+
+### 分类
+
+>BO类 ： 业务类   进行业务设计，extends 实体类
+
+>VO类 ： 视图类   显示属性包含的类 
+
+### 注意事项
+
+1.实体类序列化
+
+> ​	序列化：eg: 将实体对象转化为Json对象；
+>
+> ​	反序列化：eg : 将Json转化为实体对象；
+
+1.1 作用
+
+>控制版本是否兼容
+>
+>若认为修改的 实体对象 是向后兼容的，则不修改 serialVersionUID；反之修改；
+
+1.2 使用
+
+```java
+//方式一
+//根据包名，类名，继承关系，非私有的方法和属性，以及参数，返回值等诸多因子计算得出的，极度复杂生成的一个64位的哈希字段
+private static final long serialVersionUID = -3681388653357478350L;
+```
+
+```java
+//方式二
+//默认的1L
+private static final long serivalVersionUID = 1L;
+```
+
+1.2 自动生成 （IDEA设置）
+
+1）settings  ==>  serializable ==> 勾选 ：Serializable class without 'serialVersionUID'  + 'serialVersionUID' field not declared 'private static final long'
+
+2）设置之后，选中对应的类名，然后按 alt+enter 快捷键  ==>  add 'serialVersionUID' field
+
+## 线程
+
+### 线程设置类
+
+```java
+@Configuration
+//开启异步
+@EnableAsync
+public class AsyncConfig(){
+     @Bean("taskExecutorCert")
+    public TaskExecutor taskExecutorCert() {
+        // ThreadPoolTaskExecutor 这个类是sring为我们提供的线程池类
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        // 设置核心线程数
+        executor.setCorePoolSize(10);
+        // 设置最大线程数
+        executor.setMaxPoolSize(50);
+        // 设置队列容量
+        executor.setQueueCapacity(10);
+        // 设置线程活跃时间（秒）
+        executor.setKeepAliveSeconds(30);
+        // 设置默认线程名称
+        executor.setThreadNamePrefix("生成证书线程-");
+        // 设置拒绝策略
+        // rejection-policy：当pool已经达到max size的时候，如何处理新任务
+        // CALLER_RUNS：不在新线程中执行任务，而是由调用者所在的线程来执行
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        // 等待所有任务结束后再关闭线程池
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        //设置线程池中任务的等待时间，如果超过这个时候还没有销毁就强制销毁，以确保应用最后能够被关闭，而不是阻塞住
+        executor.setAwaitTerminationSeconds(10);
+
+        //执行初始化
+        executor.initialize();
+        return executor;
+    }
+}
+```
+
+> 多线程设置调用
+
+```java
+@Async("taskExecutorCert")
+---------线程调用方法---------
+```
+
+
+>多线程塞入流程相关数据
+
+```java
+	    List<Future> futureList = new ArrayList<>();
+
+        for (DesignAppraiseBo designAppraiseBo : designAppraiseBoList) {
+
+            designAppraiseBo.setLoginName(record.getLoginName());
+
+            Future<String> future = 
+---------线程调用方法---------
+designAppraiseAsyncService.addFlowData(designAppraiseBo);
+---------线程调用方法---------
+            futureList.add(future);
+        }
+
+        try {
+
+            // 监听线程是否全部结束
+            while (true){
+
+            	// 当线程容器中没有任何线程的时候 说明线程已经全部结束
+                if (futureList.size() < 1) { 
+                    logger.info("线程已全部结束");
+                    break;
+                }
+
+                for (int i = 0; i < futureList.size(); i++) {
+                    Future<String> future = futureList.get(i);
+                    future.get();
+
+                    // 线程结束 则将其从线程容器中移除
+                    if (future.isDone()){
+                        futureList.remove(i);
+                        break;
+                    }
+                }
+            }
+        }catch (Exception e){
+            throw new SystemRuntimeException(e.getMessage());
+        }
+```
+
+## Token、Session与Cookie
+
+### Token
+
+ #### 简介
+ >1、Token的引入： Token是在客户端频繁向服务端请求数据，服务端频繁的去数据库查询用户名和密码并进行对比，判断用户名和密码正确与否，并作出相应提示，在这样的背景下，Token便应运而生。 
+ >2、Token的定义： Token是服务端生成的一串字符串，以作客户端进行请求的一个令牌，当第一次登录后，服务器生成一个Token便将此Token返回给客户端，并存储在客户端，以后客户端只需带上这个Token前来请求数据即可，无需再次带上用户名和密码。 
+ >3、使用Token的目的： Token的目的是为了减轻服务器的压力，减少频繁的查询数据库，使服务器更加健壮。
+ >4.Token 的优点： 扩展性更强，也更安全点，非常适合用在 Web 应用或者移动应用上。Token 的中文有人翻译成 “令牌”，我觉得挺好，意思就是，你拿着这个令牌，才能过一些关卡。
+ >5.Token一般用在三个地方: 
+ > 	①防止表单重复提交 
+ > 	②anti csrf攻击（跨站点请求伪造） 
+          ③身份验证（单点登录）
+
+>组成：
+> 1.第一部分头部（header）：声明加密算法（HMAC -HS256） 
+> 2.第二部分我们称其为载荷（payload )：保存用户的信息 
+> 3.第三部分是签名（signature）：需要base64转码后的header和base64转码后的payload连接组成的字符串，然后通过header中声明的加密方式进行加密。
+![[Pasted image 20230310165247.png]]
+
+
+>鉴权流程:
+>1.用户通过用户名和密码发送请求。 
+>2.程序验证,并返回一个签名的token 给客户端。 
+>3.客户端储存token,并且每次用于每次发送请求。 
+>4.服务端验证token并返回数据。
+![[Pasted image 20230310165027.png]]
+
+>当客户端把这个token发过来的时候，再用同样的HMAC-SHA256算法和同样的密钥，对数据再计算一次签名， 和token中的签名做个比较， 如果相同，就知道客户端已经登录过了，如果不相同，数据部分肯定被人篡改过，则告诉客户端没有认证。
+![[Pasted image 20230310165356.png]]
+
+
+
+### Session
+
+#### 简介
+>session ：就是会话。这个就类似于你和一个人交谈，你怎么知道当前和你交谈的是张三而不是李四呢？对方肯定有某种特征（长相等）表明他就是张三。服务器就要给每个客户端分配不同的“身份标识”，然后客户端每次向服务器发请求的时候，都带上这个“身份标识”，服务器就知道这个请求来自于谁了。至于客户端怎么保存这个“身份标识”，可以有很多种方式，对于浏览器客户端，大家都默认采用 cookie 的方式。
+
+>认证流程：
+![[Pasted image 20230310164815.png]]
+
+
+	区别：cookie数据存放在客户的浏览器上，session数据放在服务器上。将重要信息存放在Session中，其他信息如果需要保留，可以放在cookie中。
+
+
+### Cookie
+
+#### 简介
+>cookie：非常具体的东西，指的就是浏览器里面能永久存储的一种数据，仅仅是浏览器实现的一种数据存储功能。cookie由服务器生成，发送给浏览器，浏览器把cookie以kv形式保存到某个目录下的文本文件内，下一次请求会把该cookie发送给服务器。
+
+
+
+
+-----
 
 
 # 📊 数据库
@@ -2764,559 +3438,6 @@ Nginx的进程模型如图所示：
 如果只访问nginx的静态资源，最大并发数量应该是：worker_connections * worker_processes / 2
 
 而如果是作为反向代理服务器，最大并发数量应该是：worker_connections * worker_processes / 4
-
-
------
-
-
-# ☕咖啡 小芝士
-
- ## 各种锁
-
-### 简介
-
-> https://www.cnblogs.com/jyroy/p/11365935.html
-
-
-## List 集合操作
-
-***Key :  Collectors 
-
-> fliter    过滤
-> map     运算
-> distinct   去重
-
-> 整理 list map  --->  steam  collect  map
-
-### list 遍历
-
-```java
-// for 循环
-for(int i = 0;i<list.size();i++){
-	sout(list.get(i));
-}
-
-// 对象遍历
-for(Object ob : list){
-	sout(ob);
-}
-
-！！// Lambda 表达式
-list.forEach( ob -> {
-	sout(ob);
-})
-
-// 迭代器遍历
-Iterator<类型> iterator = list.iterator();
-while(iterator.hasNext()){
-	类型 ob = iterator.next();
-	sout(ob);
-}
-
-// 打印语法糖
-list.forEach(System.out::println);
-
-```
-
-### list排序
-
-> 单条件
-
-```java
-// 单条件升序
-List<Object> ascList = list.stream().sorted(Comparator.comparing(Object::属性条件)).collect(Collectors.toList());
-
-// 单条件降序
-	// 1.先升序再逆置
-List<Object> descList = list.stream().sorted(Comparator.comparing(Object::属性条件).reversed()).collect(Collectors.toList());
-	// 2.直接降序
-List<Object> descList = list.stream().sorted(Comparator.comparing(Object::属性条件,Comparator.reverseOrder())).collect(Collectors.toList());	
-
-//基于 jdk1.8 工具类 直接排序源list集合（不产生新的集合）
-Collections.sort(list(),Comparator.comparing(对象::排序条件));
-
-
-```
-
-> 多条件
-
-```java 
-// 属性一升序+属性二降序
-List<Object> ascList = list.stream().sorted(Comparator.comparing(Object::属性条件1))
-.thenComparing(Object::属性条件2,Comparator.reverseOrder())
-.collect(Collectors.toList());
-```
-
-###  list转Map
-
-> 1 : 1 的 K-V 结构    #toMap
-
-```java
-/**
-*  list -> map 
-*  Tip: 使用 toMap 时，当集合中对象有重复的key,会报 Duplicate key....
-*  Collectors.toMap(Key::key,Value::value,Key重复解决方式)
-*  可用 （k1,k2）-> k1 设置，当有重复的key,会保留 k1 ,舍弃 k2
-*/
-Map<分组属性类型,List<Object>> map = list.stream()
-.collect(Collectors.toMap(Object::分组属性, a -> a,(k1,k2) -> k1));
-```
-
-> 1: n 的 K-V 结构   #groupingBy
-
-```java
-//单属性分组
-Map<分组属性类型,List<Object>> map = lsit.stream()
-.collcet(Collectors.groupingBy( Object :: 分组属性 ))；
-
-//多属性分组
-Map<分组属性类型,List<Object>> map = lsit.stream()
-.collcet(Collectors.groupingBy( Ob -> {
-	ob.分组属性1 + "_" + ob.分组属性2
-} ))；
-
-//条件判断
-Map<分组属性类型,List<Object>> map = lsit.stream()
-.collcet(Collectors.groupingBy( ob -> {
-	if(ob.分组属性的分组条件1){
-		return 组别1<分组属性类型>
-	}else if(ob.分组属性的分组条件2){
-		return 组别2<分组属性类型>
-	}else{
-		return 组别3<分组属性类型>
-	}
-} ))；
-
-//多级分组 （实质：双参数复合 Collectors.groupingBy（））
-Map<分组属性类型,List<Object>> map = lsit.stream()
-.collcet(Collectors.groupingBy(
-	object :: 分组属性1, // 一级分组
-	// 二级分组
-	Collectors.groupingBy( ob -> {
-	ob.属性
-	})
-))；
-
-//求每组数量
-Map<分组属性类型,Long> map = lsit.stream()
-.collcet(Collectors.groupingBy( Object :: 分组属性, Collectors.counting() ))；
-
-//分组求和
-Map<分组属性类型,Double> map = lsit.stream()
-.collcet(Collectors.groupingBy( Object :: 分组属性, Collectors.summingDouble(Object :: 求和属性) ))；
-
-
-
-```
-
-
-### 其他
-
-> 根据某一属性提取为List
-
-```java
-List<类型> applyTypeList = list.stream().map(实体类 :: 条件).distinct().collect(Collectors.toList());
-```
-
->从List集合中去除元素(会修改List)
-
-```java
-BoList.removeIf(e -> Strings.isNullOrEmpty(e.getProjectCode()));
-```
-
->List集合过滤(不修改List)
-
-```java
-  private List<Integer> integers = Lists.list(30, 40, 10, 20);
-
-  Set<Integer> collect = integers.stream().filter(i -> i > 20).collect(Collectors.toSet());
-```
-
-> list集合计算某一字段的和
-
-```java
-// BigDecimal类型
-BigDecimal amount = personBonusInfoList.stream().map(PersonBonusInfo :: getAmount).reduce(BigDecimal.ZERO,BigDecimal::add);
-```
-
-> list集合 根据对象某一属性 合并为以某字符分割的字符串
-> eg:   1,2,3,4,5
-
-```java
-String s = list.stream().map(对象::属性).collect(Collectors.joining("分隔符"));
-```
-
-## Map集合操作
-
-### Map遍历
-
-```java
- //推荐
-for (Map.Entry<类1, List<类2>> entry : map集合.entrySet()) {
-     类1 key = entry.getKey();
-     List<类2> value = entry.getValue();
-}
-
-//keySet获取map集合key的集合  然后在遍历key
-for(String key:map.keySet()){
-    String value = map.get(key).toString();//
-    System.out.println("key:"+key+" vlaue:"+value);
-}
-
- //Map集合循环遍历二  通过迭代器的方式
-  Iterator<Entry<String, Object>> it = map.entrySet().iterator();
-    while(it.hasNext()){
-      Entry<String, Object> entry = it.next();
-       System.out.println("key:"+entry.getKey()+"       key:"+entry.getValue());
-}
-
-//通过Map.values()遍历所有的value，但不能遍历key
-for(Object m:map.values()){
-    System.out.println(m);
-}
-```
-
-
-## 数据类型的相关处理
-
-### String 字符串
-
->字符串截取
-
-```java
-String S1 = S2.substring(S2.length() - 保留位数);
-```
-
->数字补位
-
-```java
-// 0 - 补充数； 3 - 补充位数； d - 实数；
-String.format("%03d",num)     
-```
-
->equals
-
-```java
-常量.equals(变量)    //防止出现空指针异常
-```
-
->字符串划分
-
-:star2:  split()
-
-``` java
-//语法 (regex - 正则表达式分隔符；limit - 分割的份数)
- public String[] split(String regex, int limit)
-```
-
-:star2: indexOf()
-
-```java
-//形式：
-
-//返回指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
-public int indexOf(int ch)
-
-//返回从 fromIndex 位置开始查找指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
-public int indexOf(int ch, int fromIndex) 
-
-//返回指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
-int indexOf(String str)
-
-//返回从 fromIndex 位置开始查找指定字符在字符串中第一次出现处的索引，如果此字符串中没有这样的字符，则返回 -1。
-int indexOf(String str, int fromIndex)
-
-//语法:
-ch - 字符，Unicode 编码;
-fromIndex - 开始搜索的索引位置，初始为0;
-str -- 要搜索的子字符串。
-
-public int indexOf(int ch )
-
-public int indexOf(int ch, int fromIndex)
-
-int indexOf(String str)
-
-int indexOf(String str, int fromIndex)
-
-```
-
-### StringBuffer StringBuilder
-
-> StringBuffer对象代表一个字符序列可变的字符串，当一个StringBuffer被创建以后，通过StringBuffer提供的append()、insert()、reverse()、setCharAt()、setLength()等方法可以改变这个字符串对象的字符序列，但都不会产生新的对象。通过StringBuffer生成的字符串，可以调用toString()方法将其转换为一个String对象。
-
->StringBuilder类也代表可变字符串对象。实际上，StringBuilder和StringBuffer基本相似，他们的原理与操作一样，两个类的构造器和方法也基本相同。不同的是：StringBuffer是线程安全的，而StringBuilder则没有实现线程安全功能，所以性能略高。
-
-
-### BigDecimal
-```java
-	// 计算某一bigDecimal属性和
-	BigDecimal sum = personBonusList.stream().map(e -> {  
-    if (null == e.getAmountCount()) {  
-        return BigDecimal.ZERO;  
-    } else {  
-        return e.getAmountCount();  
-    }  
-}).reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2,BigDecimal.ROUND_HALF_UP);
-```
-
-## Lambda 表达式 ( -> )
-
-### 简介
-
-> “强调做什么 而不是以什么形式做”
-
-### 格式
-
-```java
-//标准格式：
-(参数类型 参数名称) ‐> { 代码语句 }
-
-//省略格式：
-可省略的内容：
-1.参数列表：括号中参数列表的数据类型可以省略不写 (因为在接口里已经定义了类型);
-2.参数列表：括号中的参数如果只有一个 那么类型和()都可以省略;
-3.代码：如果{}中的代码只有一行 那么无论是否有返回值 可以省略{}和return和分号(但要省略必须一起省略);
-```
-
-### 使用
-
-> 1. 无参无返回值
-
-```java
-// 调用invokeCook()方法 传递Cook接口的匿名内部类对象
-        invokeCook(new Cook() {
-            @Override
-            public void makeFood() {
-                System.out.println("开饭了");
-            }
-        });
-
-        // 使用Lambda表达式简化匿名内部类的书写
-        invokeCook(() -> {
-            System.out.println("开饭了");
-        });
-```
-
-> 2.有参数有返回值
-
-```java
-实体对象类：
-       // 升序操作
-        Arrays.sort(arr, new Comparator<Person>() {
-            @Override
-            public int compare(Person o1, Person o2) {
-                return o1.getAge()-o2.getAge();
-            }
-        });
-
-        // 使用Lambda表达式简化匿名内部类的书写
-        Arrays.sort(arr,(Person o1, Person o2) -> {
-            return o1.getAge()-o2.getAge();
-        });
-
-计算类：
-     // 调用方法 参数是一个接口 可以使用匿名内部类
-        invokeCalc(1, 2, new Calculate() {
-            @Override
-            public int calc(int a, int b) {
-                return a+b;
-            }
-        });
-
-        // 使用Lambda表达式简化匿名内部类的书写
-        invokeCalc(1,2,(int a,int b) -> {
-            return a+b;
-        });
-```
-
-
-
-
-
-## 实体类
-
-### 分类
-
->BO类 ： 业务类   进行业务设计，extends 实体类
-
->VO类 ： 视图类   显示属性包含的类 
-
-### 注意事项
-
-1.实体类序列化
-
-> ​	序列化：eg: 将实体对象转化为Json对象；
->
-> ​	反序列化：eg : 将Json转化为实体对象；
-
-1.1 作用
-
->控制版本是否兼容
->
->若认为修改的 实体对象 是向后兼容的，则不修改 serialVersionUID；反之修改；
-
-1.2 使用
-
-```java
-//方式一
-//根据包名，类名，继承关系，非私有的方法和属性，以及参数，返回值等诸多因子计算得出的，极度复杂生成的一个64位的哈希字段
-private static final long serialVersionUID = -3681388653357478350L;
-```
-
-```java
-//方式二
-//默认的1L
-private static final long serivalVersionUID = 1L;
-```
-
-1.2 自动生成 （IDEA设置）
-
-1）settings  ==>  serializable ==> 勾选 ：Serializable class without 'serialVersionUID'  + 'serialVersionUID' field not declared 'private static final long'
-
-2）设置之后，选中对应的类名，然后按 alt+enter 快捷键  ==>  add 'serialVersionUID' field
-
-## 线程
-
-### 线程设置类
-
-```java
-@Configuration
-//开启异步
-@EnableAsync
-public class AsyncConfig(){
-     @Bean("taskExecutorCert")
-    public TaskExecutor taskExecutorCert() {
-        // ThreadPoolTaskExecutor 这个类是sring为我们提供的线程池类
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        // 设置核心线程数
-        executor.setCorePoolSize(10);
-        // 设置最大线程数
-        executor.setMaxPoolSize(50);
-        // 设置队列容量
-        executor.setQueueCapacity(10);
-        // 设置线程活跃时间（秒）
-        executor.setKeepAliveSeconds(30);
-        // 设置默认线程名称
-        executor.setThreadNamePrefix("生成证书线程-");
-        // 设置拒绝策略
-        // rejection-policy：当pool已经达到max size的时候，如何处理新任务
-        // CALLER_RUNS：不在新线程中执行任务，而是由调用者所在的线程来执行
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        // 等待所有任务结束后再关闭线程池
-        executor.setWaitForTasksToCompleteOnShutdown(true);
-        //设置线程池中任务的等待时间，如果超过这个时候还没有销毁就强制销毁，以确保应用最后能够被关闭，而不是阻塞住
-        executor.setAwaitTerminationSeconds(10);
-
-        //执行初始化
-        executor.initialize();
-        return executor;
-    }
-}
-```
-
-> 多线程设置调用
-
-```java
-@Async("taskExecutorCert")
----------线程调用方法---------
-```
-
-
->多线程塞入流程相关数据
-
-```java
-	    List<Future> futureList = new ArrayList<>();
-
-        for (DesignAppraiseBo designAppraiseBo : designAppraiseBoList) {
-
-            designAppraiseBo.setLoginName(record.getLoginName());
-
-            Future<String> future = 
----------线程调用方法---------
-designAppraiseAsyncService.addFlowData(designAppraiseBo);
----------线程调用方法---------
-            futureList.add(future);
-        }
-
-        try {
-
-            // 监听线程是否全部结束
-            while (true){
-
-            	// 当线程容器中没有任何线程的时候 说明线程已经全部结束
-                if (futureList.size() < 1) { 
-                    logger.info("线程已全部结束");
-                    break;
-                }
-
-                for (int i = 0; i < futureList.size(); i++) {
-                    Future<String> future = futureList.get(i);
-                    future.get();
-
-                    // 线程结束 则将其从线程容器中移除
-                    if (future.isDone()){
-                        futureList.remove(i);
-                        break;
-                    }
-                }
-            }
-        }catch (Exception e){
-            throw new SystemRuntimeException(e.getMessage());
-        }
-```
-
-## Token、Session与Cookie
-
-### Token
-
- #### 简介
- >1、Token的引入： Token是在客户端频繁向服务端请求数据，服务端频繁的去数据库查询用户名和密码并进行对比，判断用户名和密码正确与否，并作出相应提示，在这样的背景下，Token便应运而生。 
- >2、Token的定义： Token是服务端生成的一串字符串，以作客户端进行请求的一个令牌，当第一次登录后，服务器生成一个Token便将此Token返回给客户端，并存储在客户端，以后客户端只需带上这个Token前来请求数据即可，无需再次带上用户名和密码。 
- >3、使用Token的目的： Token的目的是为了减轻服务器的压力，减少频繁的查询数据库，使服务器更加健壮。
- >4.Token 的优点： 扩展性更强，也更安全点，非常适合用在 Web 应用或者移动应用上。Token 的中文有人翻译成 “令牌”，我觉得挺好，意思就是，你拿着这个令牌，才能过一些关卡。
- >5.Token一般用在三个地方: 
- > 	①防止表单重复提交 
- > 	②anti csrf攻击（跨站点请求伪造） 
-          ③身份验证（单点登录）
-
->组成：
-> 1.第一部分头部（header）：声明加密算法（HMAC -HS256） 
-> 2.第二部分我们称其为载荷（payload )：保存用户的信息 
-> 3.第三部分是签名（signature）：需要base64转码后的header和base64转码后的payload连接组成的字符串，然后通过header中声明的加密方式进行加密。
-![[Pasted image 20230310165247.png]]
-
-
->鉴权流程:
->1.用户通过用户名和密码发送请求。 
->2.程序验证,并返回一个签名的token 给客户端。 
->3.客户端储存token,并且每次用于每次发送请求。 
->4.服务端验证token并返回数据。
-![[Pasted image 20230310165027.png]]
-
->当客户端把这个token发过来的时候，再用同样的HMAC-SHA256算法和同样的密钥，对数据再计算一次签名， 和token中的签名做个比较， 如果相同，就知道客户端已经登录过了，如果不相同，数据部分肯定被人篡改过，则告诉客户端没有认证。
-![[Pasted image 20230310165356.png]]
-
-
-
-### Session
-
-#### 简介
->session ：就是会话。这个就类似于你和一个人交谈，你怎么知道当前和你交谈的是张三而不是李四呢？对方肯定有某种特征（长相等）表明他就是张三。服务器就要给每个客户端分配不同的“身份标识”，然后客户端每次向服务器发请求的时候，都带上这个“身份标识”，服务器就知道这个请求来自于谁了。至于客户端怎么保存这个“身份标识”，可以有很多种方式，对于浏览器客户端，大家都默认采用 cookie 的方式。
-
->认证流程：
-![[Pasted image 20230310164815.png]]
-
-
-	区别：cookie数据存放在客户的浏览器上，session数据放在服务器上。将重要信息存放在Session中，其他信息如果需要保留，可以放在cookie中。
-
-
-### Cookie
-
-#### 简介
->cookie：非常具体的东西，指的就是浏览器里面能永久存储的一种数据，仅仅是浏览器实现的一种数据存储功能。cookie由服务器生成，发送给浏览器，浏览器把cookie以kv形式保存到某个目录下的文本文件内，下一次请求会把该cookie发送给服务器。
-
-
 
 
 -----
