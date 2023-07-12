@@ -2687,11 +2687,20 @@ designAppraiseAsyncService.addFlowData(designAppraiseBo);
 :star2: 单对象属性判断( 使用 model 代替变量对象)
 
 ```xml
+	<!-- 双引号 -->
 	<if test="model.属性名 条件">
 	and 表字段名 = #{model.属性}
 	</if>
 ```
 
+:star2: 多对象属性判断( 使用 model 代替变量对象)
+
+```xml
+	<!-- 单引号 -->
+	<if test='model.属性名 条件1 and model.属性名 条件2 '>
+	and 表字段名 = #{model.属性}
+	</if>
+```
 
 :star2: 对象集合属性判断( 使用 model 代替变量对象)
 
@@ -2730,7 +2739,11 @@ order by c
 	!=   查不出值为 null 的数据
 ```
 
-
+```sql
+// 将类似于 '值1,值2' 的单独字段分成两个字段
+	substring_index(字段名称,",",1)   //值1
+	substring_index(字段名称,",",-1)  //值2
+```
 
 ## 数据库配置
 
