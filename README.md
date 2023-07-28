@@ -3706,7 +3706,461 @@ datasource:
 >  调用时，使用  service 层面的方法
 
 -----
+# 🤖MQTT
 
+## 参考文档
+
+> MQTT中文网： http://mqtt.p2hp.com/
+
+> EMQX教程 :  https://www.emqx.com/zh/mqtt-guide
+
+## 概述
+
+### 轻量级物联网消息推送协议
+
+> `MQTT`是机器对机器(`M2M`)/物联网(`IoT`)连接协议。它被设计为一个极其轻量级的`发布/订阅`消息传输协议。对于需要较小代码占用空间和/或网络带宽非常宝贵的远程连接非常有用，是专为受限设备和低带宽、高延迟或不可靠的网络而设计。这些原则也使该协议成为新兴的“机器到机器”(`M2M`)或物联网(`IoT`)世界的连接设备，以及带宽和电池功率非常高的移动应用的理想选择。例如，它已被用于通过卫星链路与代理通信的传感器、与医疗服务提供者的拨号连接，以及一系列家庭自动化和小型设备场景。它也是移动应用的理想选择，因为它体积小，功耗低，数据包最小，并且可以有效地将信息分配给一个或多个接收器。
+
+### 特点
+
+-   开放消息协议，简单易实现
+-   发布订阅模式，一对多消息发布
+-   基于TCP/IP网络连接,提供有序，无损，双向连接。
+-   1字节固定报头，2字节心跳报文，最小化传输开销和协议交换，有效减少网络流量。
+-   消息QoS支持，可靠传输保证
+
+### 应用
+
+MQTT协议广泛应用于物联网、移动互联网、智能硬件、车联网、电力能源等领域。
+
+-   物联网M2M通信，物联网大数据采集
+-   Android消息推送，WEB消息推送
+-   移动即时消息，例如Facebook Messenger
+-   智能硬件、智能家具、智能电器
+-   车联网通信，电动车站桩采集
+-   智慧城市、远程医疗、远程教育
+-   电力、石油与能源等行业市场
+
+### 工作原理
+
+要了解 MQTT 的工作原理，首先需要掌握以下几个概念：MQTT 客户端、MQTT Broker、发布-订阅模式、主题、QoS。
+
+**MQTT 客户端**
+
+任何运行 [MQTT 客户端库](https://www.emqx.com/zh/mqtt-client-sdk)的应用或设备都是 MQTT 客户端。例如，使用 MQTT 的即时通讯应用是客户端，使用 MQTT 上报数据的各种传感器是客户端，各种 [MQTT 测试工具](https://www.emqx.com/zh/blog/mqtt-client-tools)也是客户端。
+
+**MQTT Broker**
+
+MQTT Broker 是负责处理客户端请求的关键组件，包括建立连接、断开连接、订阅和取消订阅等操作，同时还负责消息的转发。一个高效强大的 MQTT Broker 能够轻松应对海量连接和百万级消息吞吐量，从而帮助物联网服务提供商专注于业务发展，快速构建可靠的 MQTT 应用。
+
+关于 MQTT Broker 的更多详情，请参阅文章 [2023 年最全面的 MQTT Broker 比较指南](https://www.emqx.com/en/blog/the-ultimate-guide-to-mqtt-broker-comparison)。
+
+**发布-订阅模式**
+
+发布-订阅模式与客户端-服务器模式的不同之处在于，它将发送消息的客户端（发布者）和接收消息的客户端（订阅者）进行了解耦。发布者和订阅者之间无需建立直接连接，而是通过 MQTT Broker 来负责消息的路由和分发。
+
+下图展示了 MQTT 发布/订阅过程。温度传感器作为客户端连接到 MQTT Broker，并通过发布操作将温度数据发布到一个特定主题（例如 `Temperature`）。MQTT Broker 接收到该消息后会负责将其转发给订阅了相应主题（`Temperature`）的订阅者客户端。
+
+![MQTT 发布-订阅模式](https://assets.emqx.com/images/a6baf485733448bc9730f47bf1f41135.png?imageMogr2/thumbnail/1520x)
+
+**主题**
+
+MQTT 协议根据主题来转发消息。主题通过 `/` 来区分层级，类似于 URL 路径，例如：
+
+chat/room/1
+
+sensor/10/temperature
+
+sensor/+/temperature
+
+MQTT 主题支持以下两种通配符：`+` 和 `#`。
+
+-   `+`：表示单层通配符，例如 `a/+` 匹配 `a/x` 或 `a/y`。
+-   `#`：表示多层通配符，例如 `a/#` 匹配 `a/x`、`a/b/c/d`。
+
+> **注意**：通配符主题只能用于订阅，不能用于发布。
+
+关于 MQTT 主题的更多详情，请参阅文章[通过案例理解 MQTT 主题与通配符](https://www.emqx.com/zh/blog/advanced-features-of-mqtt-topics)。
+
+**QoS**
+
+MQTT 提供了三种服务质量（QoS），在不同网络环境下保证消息的可靠性。
+
+-   QoS 0：消息最多传送一次。如果当前客户端不可用，它将丢失这条消息。
+-   QoS 1：消息至少传送一次。
+-   QoS 2：消息只传送一次。
+
+关于 MQTT QoS 的更多详情，请参阅文章 [MQTT QoS 0, 1, 2 介绍](https://www.emqx.com/zh/blog/introduction-to-mqtt-qos)。
+
+### MQTT 的工作流程
+
+在了解了 MQTT 的基本组件之后，让我们来看看它的一般工作流程：
+
+1.  **客户端使用 TCP/IP 协议与 Broker 建立连接**，可以选择使用 TLS/SSL 加密来实现安全通信。客户端提供认证信息，并指定会话类型（Clean Session 或 Persistent Session）。
+2.  **客户端既可以向特定主题发布消息，也可以订阅主题以接收消息**。当客户端发布消息时，它会将消息发送给 MQTT Broker；而当客户端订阅消息时，它会接收与订阅主题相关的消息。
+3.  **MQTT Broker 接收发布的消息**，并将这些消息转发给订阅了对应主题的客户端。它根据 QoS 等级确保消息可靠传递，并根据会话类型为断开连接的客户端存储消息。
+
+
+## 基于SpringBoot + Maven 整合MQTT
+
+### 依赖
+```xml
+<!-- MQTT -->    
+<dependency>  
+   <groupId>org.springframework.integration</groupId>  
+   <artifactId>spring-integration-mqtt</artifactId>  
+   <version>5.3.2.RELEASE</version>  
+</dependency>
+
+<!-- 上面的已整合下面 -->
+<dependency>
+   <groupId>org.eclipse.paho</groupId>
+   <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+    <version>1.2.5</version>
+</dependency>
+```
+
+### 相关配置
+```yml
+mqtt:  
+  #MQTT服务地址，端口号默认1883，如果有多个，用逗号隔开 
+  # 请求使用 tcp 
+  url: tcp://mqtt.bj-hdxt.com.cn:1883  
+  #用户名  
+  username: admin  
+  #密码  
+  password: public  
+  #客户端id(不能重复)  
+  client:  
+    id: tester  
+  #MQTT默认的消息推送主题，可在调用接口指定  
+  default:  
+    topic: test1  
+  #连接超时时间 单位为秒  
+  connectionTimeout: 100  
+  #设置心跳时间 单位为秒，表示服务器每隔 1.5*?秒的时间向客户端发送心跳判断客户端是否在线  
+  keepAliveInterval: 40  
+  #发送超时时间  
+  completionTimeout: 60  
+  #是否自动重新连接  
+  automaticReconnect: true
+```
+
+### MQTT 客户端类
+```java
+@Component  
+public class MqttMd {  
+  
+    private static final Logger logger = LoggerFactory.getLogger(MqttMd.class);  
+  
+    /**  
+     *  用户名  
+     */  
+    @Value("${spring.mqtt.username}")  
+    private String username;  
+  
+    /**  
+     *  密码  
+     */  
+    @Value("${spring.mqtt.password}")  
+    private String password;  
+  
+    /**  
+     *  服务器地址  
+     */  
+    @Value("${spring.mqtt.url}")  
+    private String hostUrl;  
+  
+    /**  
+     *  客户端ID  
+     */    @Value("${spring.mqtt.client.id}")  
+    private String clientId;  
+  
+    /**  
+     *  默认主题  
+     */  
+    @Value("${spring.mqtt.default.topic}")  
+    private String defaultTopic;  
+  
+    /**  
+     *  设置心跳时间 单位为秒，表示服务器每隔 1.5*?秒的时间向客户端发送心跳判断客户端是否在线  
+     */  
+    @Value("${spring.mqtt.keepAliveInterval}")  
+    private int keepAliveInterval;  
+  
+    /**  
+     * 连接超时时间，单位为秒  
+     */  
+    @Value("${spring.mqtt.connectionTimeout}")  
+    private int connectionTimeout;  
+  
+    /**  
+     * 是否自动重新连接  
+     */  
+    @Value("${spring.mqtt.automaticReconnect}")  
+    private Boolean automaticReconnect;  
+  
+    /**  
+     * 发送超时时间  
+     */  
+    @Value("${spring.mqtt.completionTimeout}")  
+    private int completionTimeout;  
+  
+    /**  
+     * 客户端对象  
+     */  
+    private MqttClient client;  
+  
+    /**  
+     * 连接初始化 
+     */  
+    //@PostConstruct（在 bean 创建后自动初始化）
+    public void init(){  
+        connect();  
+    }  
+  
+    /**  
+     * 客户端连接服务端  
+     */  
+    public void connect(){  
+        try{  
+            logger.info("========= MQTT连接 =============");  
+            logger.info("开始连接服务端.....");  
+            //创建MQTT客户端对象  
+            client = new MqttClient(hostUrl,clientId,new MemoryPersistence());  
+            logger.info("发送服务器地址--[{}]",hostUrl);  
+            //连接设置  
+            MqttConnectOptions options = new MqttConnectOptions();  
+            logger.info("客户端ID--[{}]",clientId);  
+            //是否清空session，设置false表示服务器会保留客户端的连接记录（订阅主题，qos）,客户端重连之后能获取到服务器在客户端断开连接期间推送的消息  
+            //设置为true表示每次连接服务器都是以新的身份  
+            options.setCleanSession(false);  
+            //设置连接用户名  
+            options.setUserName(username);  
+            logger.info("客户端用户名--[{}]",username);  
+            //设置连接密码  
+            options.setPassword(password.toCharArray());  
+            //设置超时时间，单位为秒  
+            options.setConnectionTimeout(connectionTimeout);  
+            //设置心跳时间 单位为秒，表示服务器每隔 1.5*?秒的时间向客户端发送心跳判断客户端是否在线  
+            options.setKeepAliveInterval(keepAliveInterval);  
+            //设置自动重新连接  
+            options.setAutomaticReconnect(automaticReconnect);  
+            //设置遗嘱消息的话题，若客户端和服务器之间的连接意外断开，服务器将发布客户端的遗嘱信息  
+            options.setWill("willTopic",(clientId + "与服务器断开连接").getBytes(),0,false);  
+            //设置回调  
+            client.setCallback(new MqttCallBack());  
+            client.connect(options);  
+            logger.info("===============================");  
+        } catch(MqttException e){  
+            e.printStackTrace();  
+        }  
+    }  
+    
+    /**  
+     * 断开连接  
+     */  
+    public void disConnectd(){  
+        try {  
+            logger.info("========= MQTT连接 =============");  
+            logger.info("正在与服务端断开连接.....");  
+            client.disconnect();  
+            logger.info("已断开连接");  
+            logger.info("===============================");  
+        } catch (MqttException e) {  
+            e.printStackTrace();  
+        }  
+    }  
+  
+    /**  
+     * 发布  
+     * @param qos  
+     * @param retained  
+     * @param topic  
+     * @param message  
+     */  
+    public void publish(int qos,boolean retained,String topic,String message) throws MqttException {  
+  
+        if (BeanUtil.isEmpty(client)) {  
+            //先让客户端和服务器建立连接，MemoryPersistence设置clientid的保存形式，默认为以内存保存  
+            logger.info("客户端不存在，正在创建.....");  
+            client = new MqttClient(hostUrl,clientId,new MemoryPersistence());  
+        }  
+  
+        if (!client.isConnected()){  
+            //重新连接  
+            logger.info("客户端未连接!");  
+            client.connect();  
+        }else {  
+  
+        }  
+        logger.info("开始发布主题.....");  
+        MqttMessage mqttMessage = new MqttMessage();  
+        mqttMessage.setQos(qos);  
+        mqttMessage.setRetained(retained);  
+        mqttMessage.setPayload(message.getBytes());  
+        //主题的目的地，用于发布/订阅信息  
+        MqttTopic mqttTopic = client.getTopic(topic);  
+        //提供一种机制来跟踪消息的传递进度  
+        //用于在以非阻塞方式（在后台运行）执行发布是跟踪消息的传递进度  
+        MqttDeliveryToken token;  
+        try {  
+            //将指定消息发布到主题，但不等待消息传递完成，返回的token可用于跟踪消息的传递状态  
+            //一旦此方法干净地返回，消息就已被客户端接受发布，当连接可用，将在后台完成消息传递。  
+            token = mqttTopic.publish(mqttMessage);  
+            token.waitForCompletion();  
+            logger.info("发布主题成功");  
+        } catch (MqttException e) {  
+            e.printStackTrace();  
+        }  
+    }  
+    
+    /**  
+     * 订阅主题  
+     * @param topic  
+     * @param qos  
+     */  
+    public void subscribe(String topic,int qos) throws MqttException {  
+  
+        if (BeanUtil.isEmpty(client)) {  
+            //先让客户端和服务器建立连接，MemoryPersistence设置clientid的保存形式，默认为以内存保存  
+            logger.info("客户端不存在，正在创建.....");  
+            client = new MqttClient(hostUrl,clientId,new MemoryPersistence());  
+        }  
+  
+        if (!client.isConnected()){  
+            //重新连接  
+            logger.info("客户端未连接!");  
+            client.connect();  
+        }else {  
+  
+        }  
+        logger.info("开始订阅主题.....");  
+        try {  
+            client.subscribeWithResponse(topic, qos);  
+            client.setCallback(new MqttCallBack());  
+            logger.info("订阅主题完成！");  
+        } catch (MqttException e) {  
+            e.printStackTrace();  
+        }  
+  
+    }}
+```
+
+### MQTT消息回调类
+
+> 注意回调方法调用外部方法可能会导致掉线（大坑）！！！！
+
+```java
+public class MqttCallBack implements MqttCallbackExtended {  
+
+    @Autowired  
+    private MqttMd client;  
+  
+    private static final Logger logger = LoggerFactory.getLogger(MqttCallBack.class);  
+  
+    /**  
+     * 客户端连接成功的回调  
+     * @param reconnect  
+     * @param serverURI  
+     */  
+    @Override  
+    public void connectComplete(boolean reconnect, String serverURI) {  
+        logger.info("服务端连接成功!");  
+    }  
+  
+    /**  
+     * 客户端丢失连接的回调  
+     * @param throwable  
+     */  
+    @Override  
+    public void connectionLost(Throwable throwable) {  
+        logger.info("与服务器断开连接....");  
+        //重新连接  
+        client.connect();  
+    }  
+  
+    /**  
+     * 消息到达的回调  
+     * @param topic  
+     * @param message  
+     * @throws Exception  
+     */    @Override  
+    public void messageArrived(String topic, MqttMessage message) throws Exception {  
+  
+        logger.info("==========================");  
+        logger.info("消息接收成功!");  
+        logger.info(String.format("接收消息主题 : %s",topic));  
+        logger.info(String.format("接收消息Qos : %d",message.getQos()));  
+        logger.info(String.format("接收消息内容 : %s",new String(message.getPayload())));  
+        logger.info(String.format("发送消息接收消息retained : %b",message.isRetained()));  
+        logger.info("==========================");  
+    }  
+  
+    /**  
+     * 消息发布成功回调  
+     * @param iMqttDeliveryToken  
+     */  
+    @SneakyThrows  
+    @Override    public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {  
+  
+        logger.info("==========================");  
+        logger.info("消息发送成功!");  
+        IMqttAsyncClient client = iMqttDeliveryToken.getClient();  
+        logger.info("发送服务器地址--[{}]",client.getServerURI());  
+        MqttMessage message = iMqttDeliveryToken.getMessage();  
+        logger.info("发送消息Qos--[{}]",message.getQos());  
+        logger.info("发送消息内容--[{}]",new String(message.getPayload()));  
+        logger.info("发送消息接收消息retained--[{}]",message.isRetained());  
+        logger.info("==========================");  
+    }  
+}
+```
+
+###  MQTT调用测试类
+
+```java
+@RestController(value = "app.mqtt.MqttController")  
+@RequestMapping(value = "/mqtt")  
+public class MqttController {  
+  
+    @Autowired  
+    private MqttMd client;  
+  
+    /**  
+     * 连接服务器  
+     */  
+    @PostMapping("startMQTT")  
+    public void startMQTT(){  
+        client.init();  
+    }  
+  
+    /**  
+     * 断开服务器  
+     */  
+    @PostMapping("endMQTT")  
+    public void endMQTT(){  
+        client.disConnectd();  
+    }  
+  
+    /**  
+     * 发布消息  
+     */  
+    @PostMapping("sendMessage")  
+    public void sendMessage() throws MqttException {  
+        client.publish(0,true,"test","发布测试-payLoad");  
+    }  
+  
+    /**  
+     * 订阅消息  
+     */  
+    @PostMapping("receiveMessage")  
+    public void receiveMessage() throws MqttException {  
+        client.subscribe("test",1);  
+    }  
+}
+```
+
+-----
 
 # 📫Nginx 
 
