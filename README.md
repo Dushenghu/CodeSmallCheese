@@ -617,15 +617,16 @@ public class XXXXController extends BaseController {
 
 ***
 
-## 🔧FastJsonUtils 工具类
+## 🔧JSON 相关处理
 
-### 简介：Json 返回处理
+### Json 处理
 
->包含：状态码(code)、数据(data)、消息(message)、时间(time)
+#### fastJson
 
+> JSONObject 代表 json对象，JSONArray 代表 json对象数组
+> JSON 代表 JSONObject 和 JSONArray 的转化。
 
-### 依赖
-
+##### 依赖
 ```java
 	<dependency>
 			<groupId>com.alibaba</groupId>
@@ -633,6 +634,346 @@ public class XXXXController extends BaseController {
 			<version>1.2.83</version>
 	</dependency>
 ```
+
+##### 使用
+```java
+	JSONObject jsonObject = new JSONObject();
+	String jsonString = JSON.toJSONString(onject);
+
+	List<T> list1 = JSON.parseArray(jsonString,T.class);
+```
+
+#### jackJson
+
+##### 依赖
+> spring 已整合
+
+##### 使用
+```java
+// 线程安全，所以全局可以使用一个 ObjectMapper，这样可以提高效率
+	ObjectMapper objectMapper = new ObjectMapper();  
+	JsonNode jsonNode = objectMapper.readTree(msg);
+	jsonNode.get("XXX").textValue();
+```
+
+### 响应Json
+
+>包含：状态码(code)、数据(data)、消息(message)、时间(time)
+
+#### 1.统一封装返回数据
+
+在web项目中，接口返回数据一般要包含状态码、信息、数据等，接口示例：
+
+```text
+@RestController
+@RequestMapping(value = "/test", method = RequestMethod.GET)
+public class TestController {
+    @RequestMapping("/json")
+    public JSONObject test() {
+        JSONObject result = new JSONObject();
+        try {
+            // 业务逻辑代码
+            result.put("code", 0);
+            result.put("msg", "操作成功！");
+            result.put("data", "测试数据");
+        } catch (Exception e) {
+            result.put("code", 500);
+            result.put("msg", "系统异常，请联系管理员！");
+        }
+        return result;
+    }
+}
+```
+
+#### 2.1定义统一的JSON结构
+
+统一的 JSON 结构中属性包括数据、状态码、提示信息，其他项可以自己根据需要添加。一般来说，应该有默认的返回结构，也应该有用户指定的返回结构。由于返回数据类型无法确定，需要使用泛型，代码如下：
+
+```text
+public class ResponseInfo<T> {
+    /**
+     * 状态码
+     */
+    protected String code;
+    /**
+     * 响应信息
+     */
+    protected String msg;
+    /**
+     * 返回数据
+     */
+    private T data;
+
+    /**
+     * 若没有数据返回，默认状态码为 0，提示信息为“操作成功！”
+     */
+    public ResponseInfo() {
+        this.code = 0;
+        this.msg = "操作成功！";
+    }
+
+    /**
+     * 若没有数据返回，可以人为指定状态码和提示信息
+     * @param code
+     * @param msg
+     */
+    public ResponseInfo(String code, String msg) {
+        this.code = code;
+        this.msg = msg;
+    }
+
+    /**
+     * 有数据返回时，状态码为 0，默认提示信息为“操作成功！”
+     * @param data
+     */
+    public ResponseInfo(T data) {
+        this.data = data;
+        this.code = 0;
+        this.msg = "操作成功！";
+    }
+
+    /**
+     * 有数据返回，状态码为 0，人为指定提示信息
+     * @param data
+     * @param msg
+     */
+    public ResponseInfo(T data, String msg) {
+        this.data = data;
+        this.code = 0;
+        this.msg = msg;
+    }
+    // 省略 get 和 set 方法
+}
+```
+
+#### 2.2使用统一的JSON结构
+
+我们封装了统一的返回数据结构后，在接口中就可以直接使用了。如下：
+
+```text
+@RestController
+@RequestMapping(value = "/test", method = RequestMethod.GET)
+public class TestController {
+    @RequestMapping("/json")
+    public ResponseInfo test() {
+        try {
+            // 模拟异常业务代码
+            int num = 1 / 0;
+            return new ResponseInfo("测试数据");
+        } catch (Exception e) {
+            return new ResponseInfo(500, "系统异常，请联系管理员！");
+        }
+    }
+}
+```
+
+#### 3.全局异常处理
+
+##### 3.1 系统定义异常处理
+
+新建一个 ExceptionHandlerAdvice 全局异常处理类，然后加上 @RestControllerAdvice 注解即可拦截项目中抛出的异常，如下代码中包含了几个异常处理，如参数格式异常、参数缺失、系统异常等，见下例：
+
+```text
+@RestControllerAdvice
+@Slf4j
+public class ExceptionHandlerAdvice {
+
+    // 参数格式异常处理
+    @ExceptionHandler({IllegalArgumentException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseInfo badRequestException(IllegalArgumentException exception) {
+    log.error("参数格式不合法：" + e.getMessage());
+        return new ResponseInfo(HttpStatus.BAD_REQUEST.value() + "", "参数格式不符！");
+    }
+
+// 权限不足异常处理
+    @ExceptionHandler({AccessDeniedException.class})
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ResponseInfo badRequestException(AccessDeniedException exception) {
+        return new ResponseInfo(HttpStatus.FORBIDDEN.value() + "", exception.getMessage());
+    }
+
+// 参数缺失异常处理
+    @ExceptionHandler({MissingServletRequestParameterException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseInfo badRequestException(Exception exception) {
+        return new ResponseInfo(HttpStatus.BAD_REQUEST.value() + "", "缺少必填参数！");
+    }
+
+    // 空指针异常
+    @ExceptionHandler(NullPointerException.class)
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseInfo handleTypeMismatchException(NullPointerException ex) {
+        log.error("空指针异常，{}", ex.getMessage());
+        return new JsonResult("500", "空指针异常");
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    public JsonResult handleUnexpectedServer(Exception ex) {
+        log.error("系统异常：", ex);
+        return new JsonResult("500", "系统发生异常，请联系管理员");
+    }
+    
+    // 系统异常处理
+    @ExceptionHandler(Throwable.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseInfo exception(Throwable throwable) {
+        log.error("系统异常", throwable);
+        return new ResponseInfo(HttpStatus.INTERNAL_SERVER_ERROR.value() + "系统异常，请联系管理员！");
+    }
+}
+```
+
+-   @RestControllerAdvice 注解包含了 @Component 注解，说明在 Spring Boot 启动时，也会把该类作为组件交给 Spring 来管理。
+-   @RestControllerAdvice 注解包含了 @ResponseBody 注解，为了异常处理完之后给调用方输出一个 JSON 格式的封装数据。
+-   @RestControllerAdvice 注解还有个 basePackages 属性，该属性用来拦截哪个包中的异常信息，一般我们不指定这个属性，我们拦截项目工程中的所有异常。
+-   在方法上通过 @ExceptionHandler 注解来指定具体的异常，然后在方法中处理该异常信息，最后将结果通过统一的 JSON 结构体返回给调用者。
+-   但在项目中，我们一般都会比较详细地去拦截一些常见异常，拦截 Exception 虽然可以一劳永逸，但是不利于我们去排查或者定位问题。实际项目中，可以把拦截 Exception 异常写在 GlobalExceptionHandler 最下面，如果都没有找到，最后再拦截一下 Exception 异常，保证输出信息友好。
+
+接口来进行测试：
+
+```text
+@RestController
+@RequestMapping(value = "/test", method = RequestMethod.POST)
+public class TestController {
+    @RequestMapping("/json")
+    public ResponseInfo test(@RequestParam String userName, @RequestParam String password) {
+        try {
+            String data = "登录用户：" + userName + "，密码：" + password;
+            return new ResponseInfo("0", "操作成功！", data);
+        } catch (Exception e) {
+            return new ResponseInfo("500", "系统异常，请联系管理员！");
+        }
+    }
+}
+```
+
+接口调用，password这项故意空缺：
+
+![](https://pic4.zhimg.com/80/v2-8ada02af6722ce500494339119a8926f_720w.webp)
+
+  
+##### 3.2 自定义异常拦截
+
+在实际项目中，除了拦截一些系统异常外，在某些业务上，我们需要自定义一些业务异常，要处理一个服务的调用时，那么可能会调用失败或者调用超时等等，此时我们需要自定义一个异常，当调用失败时抛出该异常，让 ExceptionHandlerAdvice 去捕获。
+
+-   **定义异常信息**
+由于在业务中，有很多异常，上面的系统定义异常远远不能覆盖，为了方便项目异常信息管理，我们一般会定义一个异常信息枚举类。比如：
+
+```text
+public enum BusinessMsgEnum {
+    /**
+     * 参数异常
+     */
+    PARMETER_EXCEPTION("101", "参数异常!"),
+    /**
+     * 等待超时
+     */
+    SERVICE_TIME_OUT("102", "服务超时！"),
+    /**
+     * 参数过大
+     */
+    PARMETER_BIG_EXCEPTION("903", "内容不能超过200字，请重试!"),
+    /**
+     * 数据库操作失败
+     */
+    DATABASE_EXCEPTION("509", "数据库操作异常，请联系管理员！"),
+    /**
+     * 500 : 一劳永逸的提示也可以在这定义
+     */
+    UNEXPECTED_EXCEPTION("500", "系统发生异常，请联系管理员！");
+    // 还可以定义更多的业务异常
+
+    /**
+     * 消息码
+     */
+    private String code;
+    /**
+     * 消息内容
+     */
+    private String msg;
+
+    private BusinessMsgEnum(String code, String msg) {
+        this.code = code;
+        this.msg = msg;
+    }
+    // set get方法
+}
+```
+
+-   **拦截自定义异常**  
+我们可以定义一个业务异常，当出现业务异常时，我们就抛出这个自定义的业务异常即可。比如我们定义一个 BusinessErrorException 异常，如下：
+
+```text
+public class BusinessErrorException extends RuntimeException {
+
+    private static final long serialVersionUID = -7480022450501760611L;
+
+    /**
+     * 异常码
+     */
+    private String code;
+    /**
+     * 异常提示信息
+     */
+    private String msg;
+
+    public BusinessErrorException(BusinessMsgEnum businessMsgEnum) {
+        this.code = businessMsgEnum.code();
+        this.msg = businessMsgEnum.msg();
+    }
+    // get set方法
+}
+```
+
+在构造方法中，传入我们上面自定义的异常枚举类，在项目中，如果有新的异常信息需要添加，我们直接在枚举类中添加即可，很方便，做到统一维护，在拦截该异常时获取即可。
+
+```text
+@RestControllerAdvice
+@Slf4j
+public class GlobalExceptionHandler {
+
+    /**
+     * 拦截业务异常，返回业务异常信息
+     * @param ex
+     * @return
+     */
+    @ExceptionHandler(BusinessErrorException.class)
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseInfo handleBusinessError(BusinessErrorException ex) {
+        String code = ex.getCode();
+        String message = ex.getMessage();
+        return new ResponseInfo(code, message);
+    }
+}
+```
+
+在接口层，模拟异常场景，如下：
+
+```text
+@RestController
+@RequestMapping("/test")
+public class ExceptionController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExceptionController.class);
+
+    @GetMapping("/exception")
+    public ResponseInfo testException() {
+        try {
+            int i = 1 / 0;
+        } catch (Exception e) {
+            throw new BusinessErrorException(BusinessMsgEnum.UNEXPECTED_EXCEPTION);
+        }
+        return new ResponseInfo();
+    }
+}
+```
+
+启动项目，请求该接口：
+
+![](https://pic4.zhimg.com/80/v2-d8a35e2df4a3be497ce2e235d430b5b7_720w.webp)
+
 
 
 ***
@@ -656,6 +997,19 @@ public class XXXXController extends BaseController {
 
 > @Transactional  
 > 主要：保证同一方法内多个数据库操作要么同时成功，要么同时失败
+
+> @Component  
+> //将当前类作为组件注册到springboot容器
+> 注意事项： 
+> 在使用自动注入时
+> private static CameraInfoMapper cameraInfoMapper;  
+    @Autowired  
+   public void setCameraInfoMapper(CameraInfoMapper cameraInfoMapper){  
+    ClientMqtt.cameraInfoMapper = cameraInfoMapper;  
+  }
+
+> @PostConstruct（作用于方法上）
+> //在当前类初始化时，自动调用作用方法
 
 ### 父子项目搭建
 
@@ -2489,6 +2843,40 @@ public class BatchUpdateProvider extends MapperTemplate {
 ![MyBatis-plus 框架结构](https://baomidou.com/img/mybatis-plus-framework.jpg)
 
 #### 使用
+
+###### 配置及依赖
+
+```xml
+//依赖
+<!-- MyBatis-plus -->  
+<dependency>  
+    <groupId>com.baomidou</groupId>  
+    <artifactId>mybatis-plus-boot-starter</artifactId>  
+    <version>3.4.0</version>  
+</dependency>
+```
+
+```yml
+//配置
+mybatis-plus:  
+  mapper-locations: classpath:mapping/*.xml  
+  configuration:  
+    map-underscore-to-camel-case: true  
+    cache-enabled: true  
+    lazyLoadingEnabled: false  
+    multipleResultSetsEnabled: true
+```
+
+```java
+//启动类
+@MapperScan(value = "com.mqttserver.mqttclient.client.dao")
+```
+
+```java
+//mapper类
+@Mapper  
+@Repository("路径")
+```
 
 ###### 条件构造器
 
