@@ -3091,6 +3091,7 @@ List<Object> descList = list.stream().sorted(Comparator.comparing(Object::属性
 //基于 jdk1.8 工具类 直接排序源list集合（不产生新的集合）
 Collections.sort(list(),Comparator.comparing(对象::排序条件));
 
+!!! 排序条件应为  Integer , 当排序条件为 字符串时  应该统一长度格式
 
 ```
 
@@ -3791,6 +3792,32 @@ order by c
 // 将类似于 '值1,值2' 的单独字段分成两个字段
 	substring_index(字段名称,",",1)   //值1
 	substring_index(字段名称,",",-1)  //值2
+```
+
+```sql
+#根据定位（经,纬）查找 某一 范围（距离：米 / 去掉 *1000 为公里）内的定位信息
+select t.*  
+from (  
+    select p.*,  
+        round(  
+        (( 6371.0087714 * acos (  
+        cos ( radians(#{smsplanmanagedataset1.personSiteLat}))  
+        * cos( radians(substring_index(p.PLAN_POSITION, ",",-1)))  
+        * cos( radians(substring_index(p.PLAN_POSITION, ",", 1)) - radians(#{smsplanmanagedataset1.personSiteLng}) )  
+        + sin ( radians(#{smsplanmanagedataset1.personSiteLat}))  
+        * sin( radians(substring_index(p.PLAN_POSITION, ",",-1)) )  
+        )  )* 1000.0)) as posDistance  
+    from sms_plan_manage p  
+) t  
+where
+    t.DEL_STATUS = '0'  
+    and t.posDistance <= #{smsplanmanagedataset1.personSiteDis}  
+order by t.posDistance asc
+```
+
+```sql 
+#字符串模糊查询
+查询字段 like CONCAT('%',#{变量},'%')
 ```
 
 ## 数据库配置
@@ -5147,8 +5174,6 @@ Runnable 方式的优缺点：
       
 
 ****
-
-
 
 #### Callable
 
