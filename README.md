@@ -14,6 +14,10 @@
 
 > Idea 常用快捷键大全+ Gif 展示 ： https://zhuanlan.zhihu.com/p/515418210
 
+> linux 数据库免安装 ： https://zhuanlan.zhihu.com/p/106224545
+
+> linux 防火墙开放端口 ： https://www.linuxprobe.com/linux-open-port.html
+
 
 ***
 
@@ -3015,13 +3019,6 @@ myBatisPlusService.方法();
 
 
 
-
-
-
-
-
-
-
 ****
 
 
@@ -3803,10 +3800,10 @@ from (
         (( 6371.0087714 * acos (  
         cos ( radians(#{smsplanmanagedataset1.personSiteLat}))  
         * cos( radians(substring_index(p.PLAN_POSITION, ",",-1)))  
-        * cos( radians(substring_index(p.PLAN_POSITION, ",", 1)) - radians(#{smsplanmanagedataset1.personSiteLng}) )  
+        * cos( radians(substring_index(p.PLAN_POSITION, ",", 1)) - radians(#{smsplanmanagedataset1.personSiteLng}))  
         + sin ( radians(#{smsplanmanagedataset1.personSiteLat}))  
-        * sin( radians(substring_index(p.PLAN_POSITION, ",",-1)) )  
-        )  )* 1000.0)) as posDistance  
+        * sin( radians(substring_index(p.PLAN_POSITION, ",",-1)))  
+        ))* 1000.0)) as posDistance  
     from sms_plan_manage p  
 ) t  
 where
@@ -4982,9 +4979,567 @@ Nginx的进程模型如图所示：
 而如果是作为反向代理服务器，最大并发数量应该是：worker_connections * worker_processes / 4
 
 
+##  模板样例
+
+### 代理后端
+
+```config
+user  root;
+worker_processes  16;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  2048;
+}
+
+
+http {
+    proxy_read_timeout 240s; 
+    proxy_headers_hash_max_size 51200;
+    proxy_headers_hash_bucket_size 6400;
+    include       mime.types;
+    default_type  application/octet-stream;
+    map $http_x_forwarded_for  $clientRealIp {
+            ""    $remote_addr;
+            ~^(?P<firstAddr>[0-9\.]+),?.*$    $firstAddr;
+    }
+
+    log_format  main  escape=json '$remote_addr - $remote_user $server_name [$time_local] "$request" '
+                    '$status ||| "request_uri=$request_uri" '
+                    '||| "content_type = $content_type" ||| "content_length=$content_length"'
+                    '||| "request_body  = $request_body" ||| "UA=$http_user_agent"';
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  80;
+
+    gzip on;
+    gzip_min_length  5k;
+    gzip_buffers     4 16k;
+    gzip_comp_level 3;
+    gzip_types    application/javascript text/plain application/x-javascript text/css application/xml text/javascript application/x-httpd-php image/jpeg image/gif image/png;
+    gzip_vary on;
+
+
+	upstream aqjdapp {
+	
+        server 39.98.56.123:8280;
+        
+        server 172.27.120.23:8280;
+        
+        server 172.27.120.25:8280;
+		
+    }
+	
+    server {
+        listen       8880;
+        client_max_body_size 10M;
+        access_log  logs/host.access.log  main; 
+
+        location / {
+            
+            proxy_pass http://aqjdapp;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods "DELETE,POST, GET, OPTIONS";
+            add_header Access-Control-Allow-Headers "Origin, Authorization, Accept";
+            add_header Access-Control-Allow-Credentials true;
+        }
+		
+		error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+
+        #error_page  404              /404.html;
+
+        # redirect server error pages to the static page /50x.html
+      
+        # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+        #
+        #location ~ \.php$ {
+        #    proxy_pass   http://127.0.0.1;
+        #}
+
+        # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+        #
+        #location ~ \.php$ {
+        #    root           html;
+        #    fastcgi_pass   127.0.0.1:9000;
+        #    fastcgi_index  index.php;
+        #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+        #    include        fastcgi_params;
+        #}
+
+        # deny access to .htaccess files, if Apache's document root
+        # concurs with nginx's one
+        #
+        #location ~ /\.ht {
+        #    deny  all;
+        #}
+    }
+
+    # another virtual host using mix of IP-, name-, and port-based configuration
+    #
+    #server {
+    #    listen       8000;
+    #    listen       somename:8080;
+    #    server_name  somename  alias  another.alias;
+
+    #    location / {
+    #        root   html;
+    #        index  index.html index.htm;
+    #    }
+    #}
+
+    # HTTPS server
+    #
+    #server {
+    #    listen       443 ssl;
+    #    server_name  localhost;
+
+    #    ssl_certificate      cert.pem;
+    #    ssl_certificate_key  cert.key;
+
+    #    ssl_session_cache    shared:SSL:1m;
+    #    ssl_session_timeout  5m;
+
+    #    ssl_ciphers  HIGH:!aNULL:!MD5;
+    #    ssl_prefer_server_ciphers  on;
+
+    #    location / {
+    #        root   html;
+    #        index  index.html index.htm;
+    #    }
+    #}
+
+}
+```
+``
+
+### 代理前端
+
+```config
+user  root;
+worker_processes  1;
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    proxy_headers_hash_max_size 51200;
+    proxy_headers_hash_bucket_size 6400;
+    include       mime.types;
+    default_type  application/octet-stream;
+    map $http_x_forwarded_for  $clientRealIp {
+            ""    $remote_addr;
+            ~^(?P<firstAddr>[0-9\.]+),?.*$    $firstAddr;
+    }
+
+    log_format  main  escape=json '$remote_addr - $remote_user $server_name [$time_local] "$request" '
+                    '$status ||| "request_uri=$request_uri" '
+                    '||| "content_type = $content_type" ||| "content_length=$content_length"'
+                    '||| "request_body  = $request_body" ||| "UA=$http_user_agent"';
+
+    sendfile        on;
+
+    keepalive_timeout  65;
+
+    gzip on;
+    gzip_min_length  5k;
+    gzip_buffers     4 16k;
+    gzip_comp_level 3;
+    gzip_types    application/javascript text/plain application/x-javascript text/css application/xml text/javascript application/x-httpd-php image/jpeg image/gif image/png;
+    gzip_vary on;
+
+
+    # 网关负载(可配置多个网关进行负载均衡)
+    upstream gateway {
+        server 39.98.67.172:8882;
+		server 47.92.237.115:8882;
+    }
+
+    server {
+        listen       80;
+        client_max_body_size 10M;
+        access_log  logs/host.access.log  main;  
+	
+        #前端页面路径
+        location / {
+            root   html;
+            index  index.html index.htm;
+        }
+
+        # 系统业务busi
+        location /Api/hussar-sms{
+          rewrite ^/hussarApi/hussar-sms/(.*)$ /hussar-sms/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods "DELETE,POST, GET, OPTIONS";
+            add_header Access-Control-Allow-Headers "Origin, Authorization, Accept";
+            add_header Access-Control-Allow-Credentials true;
+        }
+        # 可视化设计器
+        location /vfg/api {
+            rewrite ^/hussarvfg/api/(.*)$ /$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # 可视化设计器主题配置
+        location /vfg/license {
+            rewrite ^/hussarvfg/(.*)$ /hussarWeb/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+        # 消息中心
+        location /Api/msg {
+            rewrite ^/hussarApi/(.*)$ /message/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header            uri  $uri;
+            proxy_set_header            client_origin  $http_origin;
+        }
+        #主题配置
+        location /hussartheme/api {
+            rewrite ^/hussartheme/api/(.*)$ /hussarWeb/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+
+        #统一日志
+        location /Api/hussarUnifiedLog {
+            rewrite ^/hussarApi/hussarUnifiedLog/(.*)$ /unifiedLog/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        #统一任务调度
+        location /Api/hussarSchedule {
+            rewrite ^/hussarApi/hussarSchedule/(.*)$ /schedule/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+        
+        #统一认证服务
+        location /Api/hussarAuth {
+            rewrite ^/hussarApi/hussarAuth/(.*)$ /auth/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods "DELETE, POST, GET, OPTIONS, PUT";
+            add_header Access-Control-Allow-Headers "Origin, Authorization, Accept";
+            add_header Access-Control-Allow-Credentials true;
+        }
+        
+        #工作流服务
+        location /Api/bpm {
+            rewrite ^/hussarApi/(.*)$ /workflow/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+        
+        #统一待办服务
+        location /Api/unified {
+            rewrite ^/hussarApi/(.*)$ /unified/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+        
+        # 文件存储服务
+        location /Api/attachment {
+            rewrite ^/hussarApi/(.*)$ /hussarFile/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+        
+        # 基础服务平台
+        location /Api {
+            rewrite ^/hussarApi/(.*)$ /hussarWeb/$1 break;
+            proxy_pass http://gateway/;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header REMOTE-HOST $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+
+}
+
+```
+
 -----
 
+# 📦Redis 
 
+## Redis Cluster集群搭建
+
+### Redis Cluster集群搭建（基于redis-6.0.6）
+-   [参考文章](https://code84.com/181882.html)
+
+####  一、基础环境准备
+
+##### 说明
+
+操作系统Windows，用Docker容器实现Linux环境。  
+具体方法在上一篇文章中第一部分有。  
+[Redis单机搭建（基于redis-6.0.6）](https://blog.csdn.net/xiao_zhu_kuai_pao/article/details/108560785)  
+唯一不同的是，本次Redis Cluster使用3主3从，为了方便在容器外部访问容器里面的Redis集群，启动容器时需要映射6个端口，命令参考如下：
+
+```
+docker run -it -p 7000:7000 -p 7001:7001 -p 7002:7002 -p 7003:7003 -p 7004:7004 -p 7005:7005 --name redis-cluster -v D:\DockerContainerSharedFile:/DockerContainerSharedFile centos
+```
+
+#### 二、安装Redis
+
+##### 1、安装依赖包
+
+1）检查操作系统是否默认安装 gcc make
+
+```
+gcc -v
+make -v
+```
+
+2）安装gcc、make
+
+```
+yum install -y gcc
+yum install -y make
+```
+
+##### 2、获取Redis源码包（离线方式），并解压编译
+
+```
+在Redis官网上下载好Redis包，然后放到共享目录下。（共享目录可在Dokcer Desktop for Windows中指定，并通过启动容器时的-v参数设置，方便windows系统和docker容器的文件共享）
+在CentOS容器环境中，将Redis包拷贝到要使用的目录里。
+	cp /DockerContainerSharedFile/redis-6.0.6.tar.gz /usr/local/
+	tar -zxvf /usr/local/redis-6.0.6.tar.gz    
+	cd /usr/local/redis-6.0.6
+	make
+补充说明：在线安装，可参考官网命令：wget http://download.redis.io/releases/redis-6.0.6.tar.gz
+```
+
+##### 3、准备Redis配置文件
+
+**1）新建目录，并拷贝出6个节点的配置文件**
+
+```
+cd  /usr/local/redis-6.0.6
+mkdir -p /usr/local/redis-6.0.6/config
+mkdir -p /usr/local/redis-6.0.6/log
+mkdir -p /usr/local/redis-6.0.6/data
+mkdir -p /usr/local/redis-6.0.6/node
+cp  redis.conf  ./config/redis-7000.conf
+```
+
+**2）修改每个节点的配置文件内容**（以 redis-7000.conf 为例）
+
+```
+a）远程访问需要把bind注释掉
+        bind 127.0.0.1    修改为    # bind 127.0.0.1
+b）修改端口号
+        port 6379    修改为    port 7000
+c）默认启动时为后台启动，yes为后台启动
+        daemonize no    修改为    daemonize yes
+d）指定进程信息存储文件
+        pidfile /var/run/redis_6379.pid    修改为    pidfile /var/run/redis_7000.pid
+e）指定日志文件
+        logfile ""     修改为    logfile "/usr/local/redis-6.0.6/log/redis-7000.log" 
+f）指定数据文件路径
+        dir ./        修改为    dir "/usr/local/redis-6.0.6/data"
+g）指定rdb持久化文件名（会自动生成到dir指定的路径下）
+        dbfilename dump.rdb    修改为    dbfilename "dump-7000.rdb"
+h）指定aof持久化文件名（默认情况不会生成，因为默认 appendonly no）
+        appendfilename "appendonly.aof"    修改为    appendfilename "appendonly-7000.aof"
+i）以集群方式启动
+        # cluster-enabled yes      将前面的 # 去掉
+j）集群节点nodes信息配置文件（是自动生成的）
+        # cluster-config-file nodes-6379.conf    修改为    cluster-config-file "/usr/local/redis-6.0.6/node/nodes-7000.conf"
+k）设置访问密码（也可不改，启动redis集群后，登录各节点，通过config set命令设置）
+        #requirepass foobared    修改为    requirepass redis123
+```
+
+**3）准备其他节点的配置文件**（将 redis-7000.conf 文件都复制一份并修改）
+
+```
+cd /usr/local/redis-6.0.6/config
+sed "s/7000/7001/g" redis-7000.conf > redis-7001.conf        
+（7002、7003、7004、7005 节点，以此类推）
+```
+
+##### 4、启动6个Redis实列
+
+```
+cd /usr/local/redis-6.0.6
+./src/redis-server ./config/redis-7000.conf
+......
+./src/redis-server ./config/redis-7005.conf
+```
+
+可以通过 ps -ef | grep redis，查看实列数量  
+![在这里插入图片描述](https://code84.com/wp-content/uploads/2022/09/2020091315485524.png)
+
+##### 5、搭建集群
+
+```
+cd /usr/local/redis-6.0.6/src
+./redis-cli --cluster create 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 --cluster-replicas 1
+    选项–replicas 1 ： 表示我们希望为集群中的每个主节点创建一个从节点
+    后面的节点，前3个是主节点，（若节点在不同的机器上，注意主节点的书写位置，要避免主节点在同一台机器上，影响性能）
+```
+
+注意：生产环境实际部署时，会用多个机器来部署Redis Cluster，届时注意节点的书写顺序，要避免主节点在同一台机器上，影响性能  
+执行后，会打印出一份预想中的配置给你看， 如果觉得没问题的话， 就可以输入 yes ，就会将这份配置应用到集群当中,让各个节点开始互相通讯,最后可以得到如下信息：  
+![在这里插入图片描述](https://code84.com/wp-content/uploads/2022/09/20200913155126954.png)
+
+#### 三、验证集群
+
+##### 1、查看集群状态
+
+```
+./redis-cli -h 127.0.0.1 -p 7000 -a redis123 cluster info
+```
+
+![在这里插入图片描述](https://code84.com/wp-content/uploads/2022/09/20200913155519174.png)
+
+##### 2、查看集群节点信息
+
+```
+./redis-cli -h 127.0.0.1 -p 7000 -a redis123 cluster nodes
+```
+
+![在这里插入图片描述](https://code84.com/wp-content/uploads/2022/09/20200913155607179.png)
+
+##### 3、存取数据
+
+```
+[root@97893fd42ad2 src]# ./redis-cli -c -h 127.0.0.1 -p 7000 -a redis123
+127.0.0.1:7000> set foo bar
+-> Redirected to slot [12182] located at 127.0.0.1:7002
+OK
+127.0.0.1:7002> set hello world
+-> Redirected to slot [866] located at 127.0.0.1:7000
+OK
+127.0.0.1:7000> get foo
+-> Redirected to slot [12182] located at 127.0.0.1:7002
+"bar"
+127.0.0.1:7002> get hello
+-> Redirected to slot [866] located at 127.0.0.1:7000
+"world"
+127.0.0.1:7000> get hello
+"world"
+
+备注：redis cluster会根据key的hash值，对应hash槽，然后将操作转向（redirect）至正确的节点
+```
+
+#### 四、补充说明
+
+##### 1、redis-trib.rb命令不能使用
+
+使用 redis-trib.rb 创建集群
+
+```
+./redis-trib.rb create --replicas 1 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005
+```
+
+报错，主要信息如下：  
+![在这里插入图片描述](https://code84.com/wp-content/uploads/2022/09/20200913155916981.png)  
+因为redis5.0开始使用 redis-cli 作为创建集群的命令，使用c语言实现，不再使用ruby语言（所以Linux环境中也不用再安装Ruby）
+
+##### 2、集群重启
+
+**1） (保留原有集群的)重启：**  
+不需要再执行(形如src/redis-cli --cluster…这样的)集群生成指令。
+
+```
+第一步：先关闭各个Redis节点。
+./src//redis-cli -p 7000 -a redis123 shutdown
+
+第二步：再启动各个Redis节点即可。
+./src/redis-server ./config/redis-7000.conf
+```
+
+**2） (删除原有集群的)重启：**  
+需要执行(形如src/redis-cli --cluster…这样的)集群生成指令。
+
+```
+第一步：先关闭各个Redis节点。
+第二步：删除各个Redis安装目录下的节点配置文件nodes.conf、数据文件dump.rdb。
+
+说明：此方式相当于重置到刚刚创建集群的时候了，所以需要删除节点配置文件nodes.conf、还需要删除数据存储文件dump.rdb。
+```
+
+##### 3、启动redis集群后，设置密码
+
+访问密码若不直接在redis.conf中修改，也可在redis集群启动后，登录各redis节点，通过config set命令设置，参考命令如下：
+
+```
+redis-cli -h 127.0.0.1 -p 9379
+config set masterauth redis123
+config set requirepass redis123
+quit
+redis-cli -h 127.0.0.1 -p 9379 -a redis123
+config rewrite
+quit
+```
+
+
+-----
 # 🧵JUC
 
 ## 进程
