@@ -4118,6 +4118,148 @@ datasource:
 >  调用时，使用  service 层面的方法
 
 -----
+
+# ⛑ Linux小芝士
+
+## 指令
+
+### 指令大全
+> Linux指令大全: https://www.linuxcool.com/
+
+### 脚本
+```shell
+# 后台运行jar脚本
+nohup java -jar hussar-web.jar >start.log 2>&1 &
+
+运行	./脚本.sh
+
+授权	chmod -R 777 /脚本路径/ 
+```
+
+## 环境配置
+
+```shell
+# jdk配置
+vi /etc/profile
+
+export JAVA_HOME=/usr/java/jdk1.8.0_291
+export PATH=$PATH:$JAVA_HOME/bin
+export CLASSPATH=$:CLASSPATH:$JAVA_HOME/lib/
+```
+
+
+## 端口开放
+
+一、firewall 方式 ([centOS](https://www.linuxprobe.com/ "centos")7.*)
+
+二、修改 iptables 方式 (centOS6.*)
+
+### 一、firewall 方式 (centOS7)
+
+查看防火墙状态
+
+firewall-cmd --state
+
+如果返回的是 “not running”，那么需要先开启防火墙；
+
+开启防火墙
+
+systemctl start firewalld.service
+
+![Linux 中如何开启端口Linux 中如何开启端口](https://www.linuxprobe.com/wp-content/uploads/2023/02/linux-open-port-01.png "Linux 中如何开启端口Linux 中如何开启端口")
+
+再次查看防火墙状态，发现已开启！
+
+开启指定端口
+
+firewall-cmd --zone=public --add-port=3306/tcp --permanent
+
+显示 success 表示成功  
+–zone=public 表示作用域为公共的  
+–add-port=443/tcp 添加 tcp 协议的端口端口号为 443  
+–permanent 永久生效，如果没有此参数，则只能维持当前 服 务生命周期内，重新启动后失效；
+
+![Linux 中如何开启端口Linux 中如何开启端口](https://www.linuxprobe.com/wp-content/uploads/2023/02/linux-open-port-02.png "Linux 中如何开启端口Linux 中如何开启端口")
+
+重启防火墙
+
+systemctl restart firewalld.service
+
+系统没有任何提示表示成功！
+
+重新加载防火墙
+
+firewall-cmd --reload
+
+显示 success 表示成功
+
+**其他[命令](https://www.linuxcool.com/ "命令")**
+
+查看已开启的端口
+
+irewall-cmd --list-ports
+
+关闭指定端口
+
+firewall-cmd --zone=public --remove-port=8080/tcp --permanent
+systemctl restart firewalld.service
+firewall-cmd --reload
+
+查看端口被哪一个进程占用
+
+netstat -lnpt |grep 5672
+
+**centos7默认没有 netstat 命令，需要安装 net-tools 工具：**
+安装 net-tools
+yum install -y net-tools
+
+临时关闭防火墙
+
+systemctl stop firewalld.service
+
+或者
+
+systemctl stop firewalld
+
+永久关闭防火墙（必须先临时关闭防火墙，再执行该命令，进行永久关闭）
+
+systemctl disable firewalld.service
+
+或者
+
+systemctl disable firewalld
+
+### 二、修改 iptables 方式 (centOS6)
+
+centOS6.* 的linux版本是自带iptables的，所以可以直接使用该方式，centOS7 不自带iptables的，所以要使用该方式，需要手动安装iptables后，再使用该方式！
+
+修改 iptables 文件
+
+vi /etc/sysconfig/iptables
+
+![Linux 中如何开启端口Linux 中如何开启端口](https://www.linuxprobe.com/wp-content/uploads/2023/02/linux-open-port-03.png "Linux 中如何开启端口Linux 中如何开启端口")
+
+重启防火墙
+
+ /etc/init.d/iptables restart
+
+![Linux 中如何开启端口Linux 中如何开启端口](https://www.linuxprobe.com/wp-content/uploads/2023/02/linux-open-port-04.png "Linux 中如何开启端口Linux 中如何开启端口")
+
+### 三、注意事项
+
+当在 Linux 中成功开启了某个端口，但是远程 telnet 还是无法 ping 通，是正常的！
+
+![Linux 中如何开启端口Linux 中如何开启端口](https://www.linuxprobe.com/wp-content/uploads/2023/02/linux-open-port-05.png "Linux 中如何开启端口Linux 中如何开启端口")
+
+因为 3306 端口没有被 Linux 进程监听，换句话说，就是该端口上没有运行任何程序！！！  
+如果这时，我将 Mysql 在 Linux 中启动，并配置完成，那么远程 telnet 该端口是可以成功的！！！
+
+
+
+
+
+
+-----
 # 🤖MQTT
 
 ## 参考文档
