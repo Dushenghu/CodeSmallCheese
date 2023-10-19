@@ -3722,7 +3722,8 @@ designAppraiseAsyncService.addFlowData(designAppraiseBo);
    ```
 
    
-
+> mysqldump 导出数据库
+> mysqldump --column-statistics=0 -uroot -p123456 数据库名 > 导出路径
 
 ### XML文件查询条件
 
@@ -4713,6 +4714,813 @@ public class MqttController {
     }  
 }
 ```
+
+## SpringBoot + Maven + MatisPlus + Mysql 业务操作
+
+### MQTT服务类 
+
+```java
+package com.mqttserver.mqttclient.client.server;  
+  
+import cn.hutool.core.bean.BeanUtil;  
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;  
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;  
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;  
+import com.fasterxml.jackson.core.JsonProcessingException;  
+import com.fasterxml.jackson.databind.JsonNode;  
+import com.fasterxml.jackson.databind.ObjectMapper;  
+import com.mqttserver.mqttclient.client.constant.CommonEnum;  
+import com.mqttserver.mqttclient.client.dao.*;  
+import com.mqttserver.mqttclient.client.entity.*;  
+import com.mqttserver.mqttclient.client.params.*;  
+import com.mqttserver.mqttclient.client.utils.MqttUtils;  
+import lombok.SneakyThrows;  
+import org.eclipse.paho.client.mqttv3.*;  
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;  
+import org.slf4j.Logger;  
+import org.slf4j.LoggerFactory;  
+import org.springframework.beans.factory.annotation.Autowired;  
+import org.springframework.beans.factory.annotation.Value;  
+import org.springframework.stereotype.Component;  
+import org.springframework.transaction.annotation.Transactional;  
+  
+import javax.annotation.PostConstruct;  
+import java.time.LocalDateTime;  
+import java.util.*;  
+  
+  
+/**  
+ * @author :  dush  
+ * @date :  2023/7/26  14:51  
+ * @Decription  MQTT类  
+ */  
+@Component  
+public class ClientMqtt implements MqttCallbackExtended {  
+  
+    private static final Logger logger = LoggerFactory.getLogger(ClientMqtt.class);  
+  
+    private static CameraInfoMapper cameraInfoMapper;  
+
+	/**
+		因为 @Component 与 @PostConstruct 初始化注解 
+		在注入 mapper 时会出现 无法注入 的问题，解决方法如下
+	
+	**/
+    @Autowired  
+    public void setCameraInfoMapper(CameraInfoMapper cameraInfoMapper){  
+        ClientMqtt.cameraInfoMapper = cameraInfoMapper;  
+    }  
+  
+    private static MqttDeviceMapper deviceMapper;  
+    @Autowired  
+    public void setMqttDeviceMapper(MqttDeviceMapper deviceMapper){  
+        ClientMqtt.deviceMapper = deviceMapper;  
+    }  
+  
+    private static MqttWristBandBPMapper bandBPMapper;  
+    @Autowired  
+    public void setMqttWristBandBPMapper(MqttWristBandBPMapper bandBPMapper){  
+        ClientMqtt.bandBPMapper = bandBPMapper;  
+    }  
+  
+    private static MqttWristBandGPSMapper bandGPSMapper;  
+    @Autowired  
+    public void setMqttWristBandGPSMapper(MqttWristBandGPSMapper bandGPSMapper){  
+        ClientMqtt.bandGPSMapper = bandGPSMapper;  
+    }  
+  
+    private static MqttWristBandTEMPMapper bandTEMPMapper;  
+    @Autowired  
+    public void setMqttWristBandTEMPMapper(MqttWristBandTEMPMapper bandTEMPMapper){  
+        ClientMqtt.bandTEMPMapper = bandTEMPMapper;  
+    }  
+  
+    /**  
+     *  用户名  
+     */  
+    @Value("${spring.mqtt.username}")  
+    private String username;  
+  
+    /**  
+     *  密码  
+     */  
+    @Value("${spring.mqtt.password}")  
+    private String password;  
+  
+    /**  
+     *  服务器地址  
+     */  
+    @Value("${spring.mqtt.url}")  
+    private String hostUrl;  
+  
+    /**  
+     *  客户端ID  
+     */    @Value("${spring.mqtt.client.id}")  
+    private String clientId;  
+  
+    /**  
+     *  默认主题  
+     */  
+    @Value("${spring.mqtt.default.topic}")  
+    private String defaultTopic;  
+  
+    /**  
+     *  设置心跳时间 单位为秒，表示服务器每隔 1.5*?秒的时间向客户端发送心跳判断客户端是否在线  
+     */  
+    @Value("${spring.mqtt.keepAliveInterval}")  
+    private int keepAliveInterval;  
+  
+    /**  
+     * 连接超时时间，单位为秒  
+     */  
+    @Value("${spring.mqtt.connectionTimeout}")  
+    private int connectionTimeout;  
+  
+    /**  
+     * 是否自动重新连接  
+     */  
+    @Value("${spring.mqtt.automaticReconnect}")  
+    private Boolean automaticReconnect;  
+  
+    /**  
+     * 发送超时时间  
+     */  
+    @Value("${spring.mqtt.completionTimeout}")  
+    private int completionTimeout;  
+  
+    /**  
+     * 客户端对象  
+     */  
+    private static MqttClient client;  
+  
+  
+    /**  
+     * 初始化连接  
+     */  
+    @PostConstruct  
+    public void init() throws MqttException {  
+        connect();  
+    }  
+  
+    /**  
+     * 客户端连接服务端  
+     */  
+  
+    public void connect(){  
+        try{  
+            logger.info("========= MQTT连接 =============");  
+            logger.info("开始连接服务端.....");  
+            MqttUtils mqttUtils = new MqttUtils();  
+            clientId = mqttUtils.doRandomString(8);  
+            //创建MQTT客户端对象  
+            client = new MqttClient(hostUrl,clientId,new MemoryPersistence());  
+            logger.info("发送服务器地址--[{}]",hostUrl);  
+            //连接设置  
+            MqttConnectOptions options = new MqttConnectOptions();  
+            logger.info("客户端ID--[{}]",clientId);  
+            //是否清空session，设置false表示服务器会保留客户端的连接记录（订阅主题，qos）,客户端重连之后能获取到服务器在客户端断开连接期间推送的消息  
+            //设置为true表示每次连接服务器都是以新的身份  
+            options.setCleanSession(true);  
+            //设置连接用户名  
+            options.setUserName(username);  
+            logger.info("客户端用户名--[{}]",username);  
+            //设置连接密码  
+            options.setPassword(password.toCharArray());  
+            //设置超时时间，单位为秒  
+            options.setConnectionTimeout(connectionTimeout);  
+            //设置心跳时间 单位为秒，表示服务器每隔 1.5*?秒的时间向客户端发送心跳判断客户端是否在线  
+            options.setKeepAliveInterval(keepAliveInterval);  
+            //设置自动重新连接  
+            options.setAutomaticReconnect(automaticReconnect);  
+            //设置遗嘱消息的话题，若客户端和服务器之间的连接意外断开，服务器将发布客户端的遗嘱信息  
+            options.setWill("willTopic",(clientId + "与服务器断开连接").getBytes(),0,false);  
+            //设置回调  
+            client.setCallback(new ClientMqtt());  
+            client.connect(options);  
+            logger.info("===============================");  
+        } catch(MqttException e){  
+            e.printStackTrace();  
+        }  
+    }  
+    /**  
+     * 断开连接  
+     */  
+    public void disConnectd(){  
+        try {  
+            logger.info("========= MQTT连接 =============");  
+            logger.info("正在与服务端断开连接.....");  
+            client.disconnect();  
+            logger.info("已断开连接");  
+            logger.info("===============================");  
+        } catch (MqttException e) {  
+            e.printStackTrace();  
+        }  
+    }  
+    /**  
+     * 重新连接  
+     */  
+    public void reConnect(){  
+        try {  
+            logger.info("========= MQTT连接 =============");  
+            logger.info("正在重新连接.....");  
+            client.reconnect();  
+            logger.info("重新连接服务器成功!");  
+            logger.info("===============================");  
+        } catch (MqttException e) {  
+            e.printStackTrace();  
+        }  
+    }  
+    /**  
+     * 发布  
+     * @param qos  
+     * @param retained  
+     * @param topic  
+     * @param message  
+     */  
+    public void publish(int qos,boolean retained,String topic,String message) throws MqttException {  
+  
+        if (BeanUtil.isEmpty(client)) {  
+            //先让客户端和服务器建立连接，MemoryPersistence设置clientid的保存形式，默认为以内存保存  
+            logger.info("客户端不存在，正在创建.....");  
+            client = new MqttClient(hostUrl,clientId,new MemoryPersistence());  
+        }  
+  
+        if (!client.isConnected()){  
+            //重新连接  
+            logger.info("客户端未连接!");  
+            client.connect();  
+        }else {  
+  
+        }  
+        logger.info("开始发布主题.....");  
+        MqttMessage mqttMessage = new MqttMessage();  
+        mqttMessage.setQos(qos);  
+        mqttMessage.setRetained(retained);  
+        mqttMessage.setPayload(message.getBytes());  
+        //主题的目的地，用于发布/订阅信息  
+        MqttTopic mqttTopic = client.getTopic(topic);  
+        //提供一种机制来跟踪消息的传递进度  
+        //用于在以非阻塞方式（在后台运行）执行发布是跟踪消息的传递进度  
+        MqttDeliveryToken token;  
+        try {  
+            //将指定消息发布到主题，但不等待消息传递完成，返回的token可用于跟踪消息的传递状态  
+            //一旦此方法干净地返回，消息就已被客户端接受发布，当连接可用，将在后台完成消息传递。  
+            token = mqttTopic.publish(mqttMessage);  
+            token.waitForCompletion();  
+            logger.info("发布主题成功");  
+        } catch (MqttException e) {  
+            e.printStackTrace();  
+        }  
+    }  
+    /**  
+     *  载入视频  
+     * @param deviceId  
+     */  
+    public void loadOnvif(String deviceId) throws JsonProcessingException {  
+  
+        ObjectMapper objectMapper = new ObjectMapper();  
+  
+        //根据deviceId查询设备信息  
+        MqttDevice device = deviceMapper.selectById(deviceId);  
+        if (BeanUtil.isEmpty(device)){  
+            //查询信息为空  
+            logger.info("根据deviceId查询设备信息为空!");  
+        }else {  
+  
+            String gatewayId = device.getGatewayId();  
+  
+            //参数封装  
+            Map<String, String> parasMap = new HashMap<>();  
+            parasMap.put("username", "admin");  
+            parasMap.put("password", "111111");  
+            Map<String, Object> paramMap = new HashMap<>();  
+            paramMap.put("msgType", CommonEnum.BASEPARAM.CLOUDREQ.getCode());  
+            paramMap.put("mid", 54132);  
+            paramMap.put("cmd", CommonEnum.CAMERACMD.LOADSTREAM.getCode());  
+            paramMap.put("serviceId", CommonEnum.SERVICEID.CAMERASERVICE.getCode());  
+            paramMap.put("deviceId", deviceId);  
+            paramMap.put("paras", parasMap);  
+  
+            //请求转换  
+            String paramString = objectMapper.writeValueAsString(paramMap);  
+  
+            logger.info("开始发布载入视频主题.....");  
+            MqttMessage mqttMessage = new MqttMessage();  
+            mqttMessage.setQos(2);  
+            mqttMessage.setRetained(false);  
+            mqttMessage.setPayload(paramString.getBytes());  
+            MqttTopic mqttTopic = client.getTopic("/v1/devices/"+gatewayId+"/command");  
+            MqttDeliveryToken token;  
+            try {  
+                token = mqttTopic.publish(mqttMessage);  
+                token.waitForCompletion();  
+                logger.info("发布载入视频主题完成！");  
+            } catch (MqttException e) {  
+                e.printStackTrace();  
+            }  
+        }    }  
+    /**  
+     * 控制摄像头  
+     * @param deviceId  
+     * @param action  
+     */  
+    public void controlCamera(String deviceId,String action) throws JsonProcessingException {  
+  
+        ObjectMapper objectMapper = new ObjectMapper();  
+  
+        //根据deviceId查询设备信息  
+        MqttDevice device = deviceMapper.selectById(deviceId);  
+        if (BeanUtil.isEmpty(device)){  
+            //查询信息为空  
+            logger.info("根据deviceId查询设备信息为空!");  
+        }else {  
+  
+            String gatewayId = device.getGatewayId();  
+  
+            //参数封装  
+            Map<String,String> parasMap = new HashMap<>();  
+            parasMap.put("action",action);  
+            Map<String,Object> paramMap = new HashMap<>();  
+            paramMap.put("msgType", CommonEnum.BASEPARAM.CLOUDREQ.getCode());  
+            paramMap.put("mid",54132);  
+            paramMap.put("cmd",CommonEnum.CAMERACMD.CAMERACONTROL.getCode());  
+            paramMap.put("serviceId",CommonEnum.SERVICEID.CAMERASERVICE.getCode());  
+            paramMap.put("deviceId",deviceId);  
+            paramMap.put("paras",parasMap);  
+  
+            //请求转换  
+            String paramString = objectMapper.writeValueAsString(paramMap);  
+  
+            logger.info("开始发布控制摄像头主题.....");  
+            MqttMessage mqttMessage = new MqttMessage();  
+            mqttMessage.setQos(2);  
+            mqttMessage.setRetained(false);  
+            mqttMessage.setPayload(paramString.getBytes());  
+            MqttTopic mqttTopic = client.getTopic("/v1/devices/"+gatewayId+"/command");  
+            MqttDeliveryToken token;  
+            try {  
+                token = mqttTopic.publish(mqttMessage);  
+                token.waitForCompletion();  
+                logger.info("发布控制摄像头主题完成！");  
+            } catch (MqttException e) {  
+                e.printStackTrace();  
+            }  
+        }    }  
+    /**  
+     * 订阅主题  
+     * @param topic  
+     * @param qos  
+     */  
+    public void subscribe(String topic,int qos) throws MqttException {  
+  
+        if (BeanUtil.isEmpty(client)) {  
+            //先让客户端和服务器建立连接，MemoryPersistence设置clientid的保存形式，默认为以内存保存  
+            logger.info("客户端不存在，正在创建.....");  
+            client = new MqttClient(hostUrl,clientId,new MemoryPersistence());  
+        }  
+  
+        if (!client.isConnected()){  
+            //重新连接  
+            logger.info("客户端未连接!");  
+            client.connect();  
+        }else {  
+  
+        }  
+        logger.info("开始订阅主题.....");  
+        try {  
+  
+  
+            //设备注册  
+            if ("/v1/devices/86031234/topo/add".equals(topic)){  
+                client.subscribe(topic, qos);  
+                //client.setCallback(mqttCallBack);  
+                //订阅得到的数据  
+                //String payMap = mqttCallBack.getPayMap();  
+                //System.out.println("payMap"+payMap);  
+            }else {  
+                client.subscribeWithResponse(topic, qos);  
+                //setCallback(mqttCallBack);  
+            }  
+  
+            logger.info("订阅主题完成！");  
+        } catch (MqttException e) {  
+            e.printStackTrace();  
+        }  
+  
+    }  
+  
+    /**  
+     * 客户端连接成功的回调  
+     * @param  
+     * @param  
+     */  
+    @SneakyThrows  
+    @Override    public void connectComplete(boolean b, String s) {  
+        logger.info("服务端连接成功!");  
+        //设备注册  
+        client.subscribe("/v1/devices/86031234/topo/add",2);  
+        //设备状态更新  
+        client.subscribe("/v1/devices/86031234/topo/update",2);  
+        //设备数据上传  
+        client.subscribe("/v1/devices/86031234/datas",2);  
+        //摄像头信息  
+        client.subscribe("/v1/devices/86031234/commandResponse",2);  
+    }  
+  
+    /**  
+     * 客户端丢失连接的回调  
+     * @param throwable  
+     */  
+    @SneakyThrows  
+    public void connectionLost(Throwable throwable) {  
+        logger.info("与服务器丢失连接....");  
+    }  
+  
+    /**  
+     * 消息到达的回调  
+     * @param topic  
+     * @param mqttMessage  
+     * @throws Exception  
+     */    @Override  
+    @Transactional    public void messageArrived(String topic, MqttMessage mqttMessage){  
+        try {  
+            logger.info("=========消息接收的回调=========");  
+            MqttUtils mqttUtils = new MqttUtils();  
+            //获取消息返回格式  
+            String msg = new String(mqttMessage.getPayload());  
+            if(msg.equals("close")){  
+                return;  
+            }  
+  
+            //解析数据工具对象  
+            ObjectMapper objectMapper = new ObjectMapper();  
+            JsonNode jsonNode = objectMapper.readTree(msg);  
+  
+            //获取topicString和gatewayId  
+            List<String> list = Arrays.asList(topic.split("/"));  
+            String topicString = list.get(list.size() - 1);  
+            String gatewayId = list.get(3);  
+  
+            //设备注册  
+            if ("add".equals(topicString)){  
+                logger.info("=========设备注册=========");  
+  
+                List<DeviceInfos> deviceInfos = new ArrayList<>();  
+                //响应参数  
+                Map<String, Object> paramMap = new HashMap<>();  
+                List<AddDeviceRsp> addDeviceRsps = new ArrayList<>();  
+  
+                Integer mid = jsonNode.get("mid").intValue();  
+                String info = jsonNode.get("deviceInfos").toString();  
+                try {  
+                    //接收数据  
+                    JsonNode infoList = objectMapper.readTree(info);  
+                    infoList.forEach(  
+                            i -> {  
+                                DeviceInfos deviceInfo = new DeviceInfos();  
+                                deviceInfo.setNodeId(BeanUtil.isEmpty(i.get("nodeId"))?null:i.get("nodeId").textValue());  
+                                deviceInfo.setModel(BeanUtil.isEmpty(i.get("model")) ? null : i.get("model").textValue());  
+                                deviceInfo.setName(BeanUtil.isEmpty(i.get("name")) ? null : i.get("name").textValue());  
+                                deviceInfo.setDescription(BeanUtil.isEmpty(i.get("description")) ? null : i.get("description").textValue());  
+                                deviceInfo.setManufacturerId(BeanUtil.isEmpty(i.get("manufacturerId")) ? null : i.get("manufacturerId").textValue());  
+                                if (BeanUtil.isNotEmpty(deviceInfo)){  
+                                    deviceInfos.add(deviceInfo);  
+                                }  
+                            }                    );  
+  
+                    //发布响应  
+                    logger.info("开始发布设备添加响应");  
+  
+                    //验证信息(无--注册;有--不操作)  
+                    if (CollectionUtils.isNotEmpty(deviceInfos)) {  
+                        deviceInfos.forEach(  
+                                di -> {  
+                                    //响应请求实体  
+                                    AddDeviceRsp addDeviceRsp = new AddDeviceRsp();  
+                                    //数据库实体  
+                                    MqttDevice device = new MqttDevice();  
+                                    BeanUtil.copyProperties(di,device);  
+                                    device.setDeviceName(di.getName());  
+                                    //查询条件  
+                                    LambdaQueryWrapper<MqttDevice> wrapper = new LambdaQueryWrapper<>();  
+                                    wrapper.eq(MqttDevice::getNodeId,device.getNodeId())  
+                                            .eq(MqttDevice::getDelStatus,"0")  
+                                            .eq(MqttDevice::getGatewayId,gatewayId);  
+                                            // .eq(MqttDevice::getDeviceName,device.getDeviceName())  
+                                            // .eq(MqttDevice::getManufacturerId,device.getManufacturerId())                                            // .eq(MqttDevice::getModel,device.getModel())                                            // .eq(MqttDevice::getDelStatus,"0");                                    List<MqttDevice> queryDevices = deviceMapper.selectList(wrapper);  
+  
+                                    if (queryDevices.size()>0){  
+                                        //说明已有相应的设备注册了  
+                                        di.setDeviceId(queryDevices.get(0).getDeviceId());  
+                                        addDeviceRsp.setDeviceInfo(di);  
+                                        addDeviceRsp.setStatusCode(-1);  
+                                        addDeviceRsp.setStatusDesc("该设备已注册");  
+                                        addDeviceRsps.add(addDeviceRsp);  
+                                    }else {  
+                                        //未注册  
+                                        //先注册  
+                                        device.setDeviceId(mqttUtils.doRandomString(8));  
+                                        device.setStatus("OFFLINE");  
+                                        device.setCreateTime(LocalDateTime.now());  
+                                        device.setDelStatus("0");  
+                                        device.setInfoFrom("SignIn");  
+                                        device.setGatewayId(gatewayId);  
+                                        int insert = deviceMapper.insert(device);  
+                                        if (insert == 1){  
+                                            di.setDeviceId(device.getDeviceId());  
+                                            addDeviceRsp.setDeviceInfo(di);  
+                                            addDeviceRsp.setStatusCode(0);  
+                                            addDeviceRsps.add(addDeviceRsp);  
+                                        }else {  
+                                            addDeviceRsp.setDeviceInfo(di);  
+                                            addDeviceRsp.setStatusCode(-1);  
+                                            addDeviceRsp.setStatusDesc("设备注册失败");  
+                                            addDeviceRsps.add(addDeviceRsp);  
+                                        }  
+                                    }                                }                        );  
+                        paramMap.put("statusCode", 0);  
+                    } else {  
+                        //无设备信息  
+                        paramMap.put("statusCode", 0);  
+                        paramMap.put("statusDesc","子设备信息列表为空");  
+                    }  
+  
+                } catch (Exception e){  
+                    e.printStackTrace();  
+                    //请求处理失败  
+                    paramMap.put("statusCode", -1);  
+                    paramMap.put("statusDesc","设备添加响应出错!");  
+                }  
+  
+                //请求组装  
+                paramMap.put("mid", mid);  
+                paramMap.put("data", addDeviceRsps);  
+  
+                //请求转换  
+                String paramString = objectMapper.writeValueAsString(paramMap);  
+  
+                logger.info("开始发布主题.....");  
+                String change = "addResponse";  
+                list.set(list.size() - 1, change);  
+                String topicResponse = String.join("/", list);  
+                MqttTopic mqttTopic = client.getTopic(topicResponse);  
+  
+                //提供一种机制来跟踪消息的传递进度  
+                //用于在以非阻塞方式（在后台运行）执行发布是跟踪消息的传递进度  
+                MqttDeliveryToken token;  
+                try {  
+                    token = mqttTopic.publish(paramString.getBytes(), 1, false);  
+                    token.waitForCompletion();  
+                    logger.info("发布主题成功");  
+                } catch (MqttException e) {  
+                    e.printStackTrace();  
+                }  
+                logger.info("发布设备添加响应结束");  
+            }  
+            else if ("update".equals(topicString)){  
+                //设备状态更新  
+                logger.info("=========设备状态更新=========");  
+  
+                List<DeviceStatus> deviceStatuses = new ArrayList<>();  
+                //响应参数  
+                Map<String,Object> paramMap = new HashMap<>();  
+                List<UpdateStatusRsp> statusRsps = new ArrayList<>();  
+  
+                String statuses = jsonNode.get("deviceStatuses").toString();  
+                Integer mid = jsonNode.get("mid").intValue();  
+                try{  
+                JsonNode statusList = objectMapper.readTree(statuses);  
+                statusList.forEach(  
+                        s->{  
+                            DeviceStatus deviceStatus = new DeviceStatus();  
+                            deviceStatus.setDeviceId(BeanUtil.isEmpty(s.get("deviceId"))?null:s.get("deviceId").textValue());  
+                            deviceStatus.setStatus(BeanUtil.isEmpty(s.get("status"))?null:s.get("status").textValue());  
+                            if (BeanUtil.isNotEmpty(deviceStatus)){  
+                                deviceStatuses.add(deviceStatus);  
+                            }  
+                        }                );  
+                //数据更新  
+                if(CollectionUtils.isNotEmpty(deviceStatuses)){  
+                    for (DeviceStatus status : deviceStatuses) {  
+                        //响应参数  
+                        UpdateStatusRsp rsp = new UpdateStatusRsp();  
+                        //查询设备信息  
+                        MqttDevice queryDevice = deviceMapper.selectById(status.getDeviceId());  
+                        if (BeanUtil.isNotEmpty(queryDevice)){  
+                            //存在时，更新状态  
+                            UpdateWrapper<MqttDevice> upWrapper = new UpdateWrapper<>();  
+                            upWrapper.eq("DEVICE_ID",queryDevice.getDeviceId())  
+                                    .set("STATUS",BeanUtil.isNotEmpty(status.getStatus())?status.getStatus():queryDevice.getStatus())  
+                                    .set("UPDATE_TIME", LocalDateTime.now());  
+                            int update = deviceMapper.update(queryDevice, upWrapper);  
+                            if (update == 1){  
+                                rsp.setDeviceId(queryDevice.getDeviceId());  
+                                rsp.setStatusCode(0);  
+                                statusRsps.add(rsp);  
+                            }else{  
+                                rsp.setDeviceId(status.getDeviceId());  
+                                rsp.setStatusCode(-1);  
+                                rsp.setStatusDesc("设备状态更新失败！");  
+                                statusRsps.add(rsp);  
+                            }  
+                        }                    }                    paramMap.put("statusCode",0);  
+                }  
+                else{  
+                    //无操作数据  
+                    paramMap.put("statusCode",0);  
+                    paramMap.put("statusDesc","设备状态信息为空！");  
+                }  
+                }catch (Exception e){  
+                    e.printStackTrace();  
+                    paramMap.put("statusCode",-1);  
+                    paramMap.put("statusDesc","设备状态更新失败！");  
+                }  
+                //请求组装  
+                paramMap.put("mid",mid);  
+                paramMap.put("data",statusRsps);  
+  
+                //请求转换  
+                String paramString = objectMapper.writeValueAsString(paramMap);  
+  
+                logger.info("开始发布设备状态更新主题.....");  
+                //主题的目的地，用于发布/订阅信息  
+                String change = "updateResponse";  
+                list.set(list.size() - 1, change);  
+                String topicResponse = String.join("/", list);  
+                MqttTopic mqttTopic = client.getTopic(topicResponse);  
+                MqttDeliveryToken token;  
+                try {  
+                    token = mqttTopic.publish(paramString.getBytes(),2,false);  
+                    token.waitForCompletion();  
+                    logger.info("发布设备状态更新主题成功");  
+                } catch (MqttException e) {  
+                    e.printStackTrace();  
+                }  
+                logger.info("发布设备状态更新响应结束");  
+            }  
+            else if ("datas".equals(topicString)){  
+                //设备数据上传  
+                logger.info("=========设备数据上报=========");  
+                List<Devices> DeviceList = new ArrayList<>();  
+                String devices = jsonNode.get("devices").toString();  
+                JsonNode devicesList = objectMapper.readTree(devices);  
+                devicesList.forEach(  
+                        dl -> {  
+                            Devices d = new Devices();  
+                            List<Services> ServicesList = new ArrayList<>();  
+                            String serviceJson = dl.get("services").toString();  
+                            String deviceId = BeanUtil.isNotEmpty(dl.get("deviceId"))?dl.get("deviceId").toString():null;  
+                            try {  
+                                JsonNode serviceJNodeList = objectMapper.readTree(serviceJson);  
+                                serviceJNodeList.forEach(  
+                                        sl -> {  
+                                            String serviceId = sl.get("serviceId").textValue();  
+                                            if (CommonEnum.SERVICEID.BLOODPRESSURE.getCode().equals(serviceId)){  
+                                                //血压  
+                                                MqttWristBandBP wristBandBP = new MqttWristBandBP();  
+                                                wristBandBP.setDeviceId(deviceId);  
+                                                wristBandBP.setServiceId(serviceId);  
+                                                try {  
+                                                    JsonNode dataJsonNode = objectMapper.readTree(sl.get("data").toString());  
+                                                    wristBandBP.setBpHign(BeanUtil.isNotEmpty(dataJsonNode.get("bp_high")) ? dataJsonNode.get("bp_high").textValue() : null);  
+                                                    wristBandBP.setBpLow(BeanUtil.isNotEmpty(dataJsonNode.get("bp_low")) ? dataJsonNode.get("bp_low").textValue() :null);  
+                                                    wristBandBP.setBpHeart(BeanUtil.isNotEmpty(dataJsonNode.get("bp_heart")) ? dataJsonNode.get("bp_heart").textValue() : null);  
+                                                } catch (JsonProcessingException e) {  
+                                                    e.printStackTrace();  
+                                                }  
+                                                wristBandBP.setEventTime(BeanUtil.isNotEmpty(sl.get("eventTime").textValue())?sl.get("eventTime").textValue():null);  
+                                                wristBandBP.setCreateTime(LocalDateTime.now());  
+                                                wristBandBP.setDelStatus("0");  
+                                                int insert = bandBPMapper.insert(wristBandBP);  
+                                                if (insert == 1){  
+                                                    logger.info("设备[{}]数据上传成功",deviceId);  
+                                                }else {  
+                                                    logger.info("设备[{}]数据上传失败",deviceId);  
+                                                }  
+                                            }                                            else if (CommonEnum.SERVICEID.GPS.getCode().equals(serviceId)){  
+                                                //GPS位置  
+                                                MqttWristBandGPS wristBandGPS = new MqttWristBandGPS();  
+                                                wristBandGPS.setDeviceId(deviceId);  
+                                                wristBandGPS.setServiceId(serviceId);  
+                                                try {  
+                                                    JsonNode dataJsonNode = objectMapper.readTree(sl.get("data").toString());  
+                                                    wristBandGPS.setLat(BeanUtil.isNotEmpty(dataJsonNode.get("lat")) ? dataJsonNode.get("lat").textValue() : null);  
+                                                    wristBandGPS.setLon(BeanUtil.isNotEmpty(dataJsonNode.get("lon")) ? dataJsonNode.get("lon").textValue() :null);  
+                                                } catch (JsonProcessingException e) {  
+                                                    e.printStackTrace();  
+                                                }  
+                                                wristBandGPS.setEventTime(BeanUtil.isNotEmpty(sl.get("eventTime").textValue())?sl.get("eventTime").textValue():null);  
+                                                wristBandGPS.setCreateTime(LocalDateTime.now());  
+                                                wristBandGPS.setDelStatus("0");  
+                                                int insert = bandGPSMapper.insert(wristBandGPS);  
+                                                if (insert == 1){  
+                                                    logger.info("设备[{}]数据上传成功",deviceId);  
+                                                }else {  
+                                                    logger.info("设备[{}]数据上传失败",deviceId);  
+                                                }  
+                                            }                                            else if (CommonEnum.SERVICEID.TEMPERATURE.getCode().equals(serviceId)){  
+                                                //温度  
+                                                MqttWristBandTEMP wristBandTEMP = new MqttWristBandTEMP();  
+                                                wristBandTEMP.setDeviceId(deviceId);  
+                                                wristBandTEMP.setServiceId(serviceId);  
+                                                try {  
+                                                    JsonNode dataJsonNode = objectMapper.readTree(sl.get("data").toString());  
+                                                    wristBandTEMP.setBodyTemp(BeanUtil.isNotEmpty(dataJsonNode.get("bodyTemp")) ? dataJsonNode.get("bodyTemp").textValue() : null);  
+                                                    wristBandTEMP.setWristTemp(BeanUtil.isNotEmpty(dataJsonNode.get("wristTemp")) ? dataJsonNode.get("wristTemp").textValue() :null);  
+                                                    wristBandTEMP.setEnvironmentTemp(BeanUtil.isNotEmpty(dataJsonNode.get("environmentTemp")) ? dataJsonNode.get("environmentTemp").textValue() : null);  
+                                                } catch (JsonProcessingException e) {  
+                                                    e.printStackTrace();  
+                                                }  
+                                                wristBandTEMP.setEventTime(BeanUtil.isNotEmpty(sl.get("eventTime").textValue())?sl.get("eventTime").textValue():null);  
+                                                wristBandTEMP.setCreateTime(LocalDateTime.now());  
+                                                wristBandTEMP.setDelStatus("0");  
+                                                int insert = bandTEMPMapper.insert(wristBandTEMP);  
+                                                if (insert == 1){  
+                                                    logger.info("设备[{}]数据上传成功",deviceId);  
+                                                }else {  
+                                                    logger.info("设备[{}]数据上传失败",deviceId);  
+                                                }  
+                                            }  
+                                        }                                );  
+  
+                            } catch (JsonProcessingException e) {  
+                                e.printStackTrace();  
+                            }  
+  
+                        }                );  
+                //数据处理  
+                logger.info("数据上报完成！");  
+            }  
+            else if ("commandResponse".equals(topicString)){  
+                //设备命令响应  
+                logger.info("=========设备命令响应=========");  
+                MqttCameraInfo mqttCamera = new MqttCameraInfo();  
+                //先判断响应结果码  
+                int errcode = BeanUtil.isNotEmpty(jsonNode.get("errcode"))?jsonNode.get("errcode").intValue():-1;  
+  
+                if (0 == errcode){  
+                    //响应成功  
+                    String bodyJson = jsonNode.get("body").toString();  
+                    JsonNode body = objectMapper.readTree(bodyJson);  
+                    String state = body.get("state").textValue();  
+  
+                    //判断响应结果状态  
+                    if ("ok".equals(state)){  
+                        //有结果  
+                        //视频流响应  
+                        if (BeanUtil.isNotEmpty(body.get("orginParameters"))){  
+                            mqttCamera.setDeviceId(body.get("orginParameters").get("deviceId").textValue());  
+                            mqttCamera.setStreamUrl(body.get("orginParameters").get("streamUrl").textValue());  
+                            mqttCamera.setCreateTime(LocalDateTime.now());  
+                            mqttCamera.setDelStatus("0");  
+                            int insert = cameraInfoMapper.insert(mqttCamera);  
+                            if (insert == 1 ){  
+                                logger.info("视频流信息保存完成!");  
+                            }else {  
+                                logger.info("视频流信息保存失败!");  
+                            }  
+                        }else {  
+                            //摄像头控制响应  
+                            logger.info("摄像头控制成功！");  
+                        }  
+  
+                    }else {  
+                        //响应数据状态错误  
+                        logger.info("摄像头---响应数据状态错误");  
+                    }  
+  
+                }else {  
+                    //响应失败  
+                    logger.info("设备命令响应错误--响应码:[{}]",errcode);  
+                }  
+            }  
+        }catch (Exception e){  
+            e.printStackTrace();  
+        }  
+  
+    }  
+    /**  
+     * 消息发布成功回调  
+     * @param iMqttDeliveryToken  
+     */  
+    @SneakyThrows  
+    @Override    public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {  
+        logger.info("==========================");  
+        logger.info("消息发送成功!");  
+//        IMqttAsyncClient client = iMqttDeliveryToken.getClient();  
+//        logger.info("发送服务器地址--[{}]",client.getServerURI());  
+//        MqttMessage message = iMqttDeliveryToken.getMessage();  
+//        logger.info("发送消息Qos--[{}]",message.getQos());  
+//        logger.info("发送消息内容--[{}]",new String(message.getPayload()));  
+//        logger.info("发送消息接收消息retained--[{}]",message.isRetained());  
+        logger.info("==========================");  
+    }  
+  
+  
+  
+}
+```
+
 
 -----
 
