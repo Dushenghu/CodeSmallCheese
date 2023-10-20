@@ -4198,7 +4198,9 @@ firewall-cmd --reload
 
 查看已开启的端口
 
-irewall-cmd --list-ports
+firewall-cmd --list-all        //查询全部
+
+firewall-cmd --list-ports   //查询端口信息
 
 关闭指定端口
 
@@ -5516,9 +5518,7 @@ public class ClientMqtt implements MqttCallbackExtended {
         logger.info("==========================");  
     }  
   
-  
-  
-}
+``
 ```
 
 
@@ -5697,6 +5697,32 @@ server {
 ```
 
 ## 配置详解
+
+### 启动时可以指定配置文件
+
+1、检查nginx配置文件格式是否正确
+```
+nginx -t -c nginx.conf
+```
+
+2、启动nginx服务
+```
+nginx -c nginx.conf
+```
+
+3.如果需要停止nginx服务，可以使用以下命令：
+```
+nginx -s stop
+```
+
+4.样例
+```config
+//Linux环境下
+ sbin 目录下 --->   ./nginx -c XXXXXX(地址)/nginx.conf
+ 
+//Win环境下
+ nginx -t -c nginx.conf
+```
 
 ### 整体结构图
  
