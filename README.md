@@ -4122,17 +4122,318 @@ datasource:
 
 # ⛑ Linux小芝士
 
+## 虚拟机搭建
+
+### VirtualBox
+
+#### 官网
+
+> VirtualBox
+
+https://www.virtualbox.org/
+
+> 阿里云镜像
+
+https://developer.aliyun.com/mirror/
+
+### 虚拟机网络连接
+
+> 方式1.在进行系统镜像安装的时候，直接将网络设置选项打开，可以节省很大的事；
+
+> 方式2.使用  ip addr  查看 当前ip配置 获取网卡名称
+> ![[Pasted image 20231109161825.png]]
+> 输入vi /etc/sysconfig/network-scripts/ifcfg-ens33 ，修改ifcfg-ens33配置文件
+> 
+> a.动态ip
+> 
+>  修改参数
+>  BOOTPROTO=dhcp
+    ONBOOT=yes
+> ![[Pasted image 20231109161914.png]]
+> b.静态ip
+
+```linux
+cd /etc/sysconfig/network-scripts/    //进入到network-scripts目录下  
+vi ifcfg-ens33  //注意：显示有ip addr查看，编辑对应的ensxx
+TYPE="Ethernet"
+PROXY_METHOD="none"
+BROWSER_ONLY="no"
+BOOTPROTO="static"  //静态
+DEFROUTE="yes"
+IPV4_FAILURE_FATAL="no"
+IPV6INIT="yes"
+IPV6_AUTOCONF="yes"
+IPV6_DEFROUTE="yes"
+IPV6_FAILURE_FATAL="no"
+IPV6_ADDR_GEN_MODE="stable-privacy"
+NAME="ens33"
+UUID="76fbd52b-3576-4e50-b44f-a95b7c3a5518"
+DEVICE="ens33"
+ONBOOT="yes" //启用
+IPADDR=192.168.157.130
+GATEWAY=192.168.157.2
+NETWORK=192.168.157.3
+BROADCAST=192.168.157.255
+NETMASK=255.255.255.0
+DNS1=114.114.114.114
+DNS2=8.8.8.8
+```
+
+>重启网卡
+三种选择使用第一第二都可以：
+systemctl restart network #重启网卡
+service network restart   #重启网卡network服务
+systemctl enable network #开机启动网卡
+
+
+
+
+
+
+----
+
 ## 指令
 
 ### 指令大全
+
 > Linux指令大全: https://www.linuxcool.com/
 
-### 脚本
+
+## 脚本
+
+### 样例
+
+```linux
+export BASE_DIR=$(cd $(dirname $0)/..; pwd)
+echo ${BASE_DIR}
+export BUILD_DIR=${BASE_DIR}/build
+echo ${BUILD_DIR}
+
+cd ${BUILD_DIR}/hussar-cloud-job
+sh hussar-cloud-job.sh
+
+export LICENSE_DIR=${BUILD_DIR}/hussar-cloud-license
+cd ${LICENSE_DIR}/bin
+nohup ./license-server.sh > ${LICENSE_DIR}/logs/start.log 2>&1 &
+```
+
+### 一： $(cd $(dirname $0); pwd) 命令详解
+
+path = $(cd $(dirname $0); pwd)解析：
+
+1、取当前运行脚本的所在路径：　$0
+
+2、取当前脚本所在路径的父目录：　dirname
+
+3、取返回的父目录的值：　$(dirname $0)
+
+4、cd到返回的父目录：　cd “$(dirname “$0”)”
+
+5、输出地址：　$(cd $(dirname $0); pwd)
+
+6、取输出的地址，并赋值给path：　path = $(cd (dirname $0),pwd)
+
+$0 获取运行脚本文件所在路径，在命令行种执行结果为 -bash
+
+[root@www ~]# echo "$0"
+-bash
+
+### 二：Linux中变量 #,@,0,1,2,※,￥￥(美式),￥(美式)?
+
+$# 是传给脚本的参数个数
+$0 是脚本本身的名字
+$1 是传递给该shell脚本的第一个参数
+$2 是传递给该shell脚本的第二个参数
+$@ 是传给脚本的所有参数的列表
+$* 是以一个单字符串显示所有向脚本传递的参数，与位置变量不同，参数可超过9个
+￥￥(美式) 是脚本运行的当前进程ID号
+$? 是显示最后命令的退出状态，0表示没有错误，其他表示有错误
+
+---
+区别：@@*
+
+相同点：都是引用所有参数
+不同点：只有在双引号中体现出来。假设在脚本运行时写了三个参数（分别存储在112 3）则"3）则"※" 等价于 “112 3"（传递了一个参数）；而“3"（传递了一个参数）；而“@" 等价于 "1""1""2" "$3"（传递了三个参数）
+
+小试牛刀一: 
+
+[root@www tools]# cat commandList.sh
+
+echo "number:$#"
+echo "scname:$0"
+echo "first :$1"
+echo "second:$2"
+echo "argume:$@"
+echo "show parm list:$※"
+echo "show process id:￥￥(美式)"
+echo "show precomm stat: $?"
+
+输出：
+
+[root@www example]# ./commandList.sh 1 20 111 2 5 6 7 3
+number:8
+scname:./commandList.sh
+first :1
+second:20
+argume:1 20 111 2 5 6 7 3
+show parm list:1 20 111 2 5 6 7 3
+show process id:3465
+show precomm stat: 0
+ 
+
+小试牛刀二:
+
+[root@www example]# cat commandOutList.sh
+#!/bin/sh
+num=$#
+name=$0
+echo "number:$num"
+echo "scname:$name"
+echo $0
+echo $1
+echo $2
+
+for ((i=0; i<$num; i++))
+do
+    echo "$i"
+done
+
+echo "argume:$@"
+for key in $@
+do
+    echo $key
+done
+echo "-----------------"
+for key in "$@"
+do
+    echo $key
+done
+echo "-----------------------------"
+for key2 in $*
+do 
+    echo $key2
+done
+echo "-----------------"
+for key2 in "$※"
+do 
+    echo $key2
+done
+
+echo "show process id:￥￥(美式)"
+echo
+echo "show precomm stat: $?"
+ 
+
+输出内容：
+
+[root@www example]# ./commandOutList.sh 
+number:0
+scname:./commandOutList.sh
+./commandOutList.sh
+
+argume:
+
+-----------------
+
+show process id:3514
+
+show precomm stat: 0
+ 
+
+[root@www tools]# sudo yum install rsync -y
+rsync和scp区别：用rsync做文件的复制要比scp的速度快，rsync只对差异文件做更新。scp是把所有文件都复制过去。 
+
+### 三： 批量拷贝脚本
+
+创建分发脚本文件：xsync   脚本内容
+
+[root@www tools]#  cat ~/bin/xsync 
+
+#!/bin/bash
+#1. 判断参数个数
+if [ $# -lt 1 ]
+then
+    echo Not Enough Arguement!
+    exit;
+fi
+
+#2. 遍历集群所有机器|docker0|docker1|docker2| 
+for host in docker0 docker1 docker2
+do
+    echo ====================  $host  ====================
+    
+    #3. 遍历所有目录，挨个发送
+    for file in $@
+    do
+        #4. 判断文件是否存在
+        if [ -e $file ]
+            then
+                #5. 获取父目录
+                pdir=$(cd -P $(dirname $file); pwd)
+                #6. 获取当前文件的名称
+                fname=$(basename $file)
+                ssh $host "mkdir -p $pdir"
+                rsync -av $pdir/$fname $host:$pdir
+            else
+                echo $file does not exists!
+        fi
+    done
+done
+ 
+
+小试牛刀一:
+
+将jdk分发到docker1,docker2服务器上
+
+[root@www bin]# ./xsync  /usr/local/tools/jdk-8u371-linux-x64.tar.gz  
+==================== docker0 ====================
+sending incremental file list
+
+sent 66 bytes  received 12 bytes  156.00 bytes/sec
+total size is 139,219,380  speedup is 1,784,863.85
+==================== docker1 ====================
+sending incremental file list
+jdk-8u371-linux-x64.tar.gz
+
+sent 139,253,473 bytes  received 35 bytes  39,786,716.57 bytes/sec
+total size is 139,219,380  speedup is 1.00
+==================== docker2 ====================
+sending incremental file list
+jdk-8u371-linux-x64.tar.gz
+
+sent 139,253,473 bytes  received 35 bytes  39,786,716.57 bytes/sec
+total size is 139,219,380  speedup is 1.00
+
+
+小试牛刀二:
+
+[root@www bin]# ./xsync /usr/local/zookeeper/
+
+将解压后的zookeeper文件全拷贝到docker1|docker2机器：
+
+[root@www bin]# ./xsync /usr/local/zookeeper/
+==================== docker0 ====================
+sending incremental file list
+
+sent 61,605 bytes  received 227 bytes  123,664.00 bytes/sec
+total size is 390,744,347  speedup is 6,319.45
+==================== docker1 ====================
+sending incremental file list
+
+sent 61,613 bytes  received 235 bytes  123,696.00 bytes/sec
+total size is 390,744,347  speedup is 6,317.82
+==================== docker2 ====================
+sending incremental file list
+
+sent 61,613 bytes  received 235 bytes  123,696.00 bytes/sec
+total size is 390,744,347  speedup is 6,317.82
+————————————————
+
 ```shell
 # 后台运行jar脚本
 nohup java -jar hussar-web.jar >start.log 2>&1 &
 
-运行	./脚本.sh
+运行	./脚本.sh  || sh 脚本.sh
 
 授权	chmod -R 777 /脚本路径/ 
 ```
@@ -4141,13 +4442,30 @@ nohup java -jar hussar-web.jar >start.log 2>&1 &
 
 ```shell
 # jdk配置
+java -version
+
 vi /etc/profile
 
 export JAVA_HOME=/usr/java/jdk1.8.0_291
 export PATH=$PATH:$JAVA_HOME/bin
 export CLASSPATH=$:CLASSPATH:$JAVA_HOME/lib/
+
+source /etc/profile
+
 ```
 
+## 内存信息
+
+```shell
+ #查看系统内存
+ free -m 
+
+ #磁盘存储
+ df
+
+ #进程信息
+ top
+```
 
 ## 端口开放
 
