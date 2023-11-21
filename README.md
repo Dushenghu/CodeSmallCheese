@@ -3001,7 +3001,7 @@ myBatisPlusService.方法();
 ****
 ## Fastdfs-文件服务器
 
-### 简介
+### 一.简介
 
 > FastDFS 是一个开源的高性能分布式文件系统（DFS）。 它的主要功能包括：**文件存储**，**文件同步**和**文件访问**，以及高容量和**负载平衡**。主要解决了海量数据存储问题，特别适合以中小文件（建议范围：4KB < file_size <500MB）为载体的在线服务。
 
@@ -3016,6 +3016,236 @@ myBatisPlusService.方法();
    以group为单位组织存储能方便的进行应用隔离、负载均衡、副本数定制（group内storage server数量即为该group的副本数），比如将不同应用数据存到不同的group就能隔离应用数据，同时还可根据应用的访问特性来将应用分配到不同的group来做负载均衡；缺点是group的容量受单机存储容量的限制，同时当group内有机器坏掉时，数据恢复只能依赖group内地其他机器，使得恢复时间会很长。
    group内每个storage的存储依赖于本地文件系统，storage可配置多个数据存储目录，比如有10块磁盘，分别挂载在/data/disk1-/data/disk10，则可将这10个目录都配置为storage的数据存储目录。
    storage接受到写文件请求时，会根据配置好的规则（后面会介绍），选择其中一个存储目录来存储文件。为了避免单个目录下的文件数太多，在storage第一次启动时，会在每个数据存储目录里创建2级子目录，每级256个，总共65536个文件，新写的文件会以hash的方式被路由到其中某个子目录下，然后将文件数据直接作为一个本地文件存储到该目录中。
+
+
+### 二.安装(Linux环境)
+
+#### 准备资源(主要 ：libfastcommon +fastdfs )
+
+> https://codeload.github.com/happyfish100/libfastcommon/tar.gz/V1.0.43
+> 
+> https://codeload.github.com/happyfish100/fastdfs/tar.gz/V6.06
+> 
+> https://codeload.github.com/happyfish100/fastdfs-nginx-module/tar.gz/V1.22
+> 
+> http://nginx.org/en/download.html
+
+a.直接下载或者在linux中使用yum命令进行安装.(安装包已上传到 github --> easytools --> fastdfs)
+
+b.把准备好的安装包上传到linux中 例如：/usr/local/src
+
+c.安装依赖
+
+>yum -y install gcc-c++
+  yum -y install libevent
+  yum install -y pcre pcre-devel
+  yum install -y zlib zlib-devel
+  yum install -y openssl openssl-devel
+
+### 三.安装libfastcommon(FastDFS依赖程序)
+
+1.进入到/usr/local/src路径下解压安装包
+
+cd /usr/local/src
+tar -zxf libfastcommonV1.0.7.tar.gz
+
+2.进入到解压后的目录下编译安装
+
+cd libfastcommon-1.0.7
+./make.sh
+./make.sh install
+
+3.由于fastdfs把创建的libfastcommon.so放到了lib64目录下面，但是系统扫描是去lib目录下面，所以把文件拷贝到lib目录下
+
+cp /usr/lib64/libfastcommon.so /usr/lib
+
+4.创建数据存储目录
+
+mkdir -p /usr/local/FastDFS/tracker //可以自定义
+mkdir -p /usr/local/FastDFS/storage //可以自定义
+mkdir -p /usr/local/FastDFS/client //可以自定义
+
+可以看到创建的目录下有client,storage,tracker三个目录
+
+### 四.安装FastDFS
+
+1.解压
+
+cd /usr/local/src
+tar -zxf FastDFS_v5.05.tar.gz
+
+2.进入解压目录，编译 安装
+
+cd FastDFS
+./make.sh
+./make.sh install
+
+3.把解压目录下的conf目录下的文件全部cp到/etc/fdfs里面
+
+cd conf
+cp * /etc/fdfs
+
+4.进入/etc/fdfs目录，修改tracker.conf文件
+
+vi /etc/fdfs/tracker.conf
+
+//找到basebase_path=你上面创建的数据存储目录(我这里是/usr/local/FastDFS/tracker)
+base_path=/usr/local/FastDFS/tracker
+
+5.启动tracker
+ 
+/usr/bin/fdfs_trackerd /etc/fdfs/tracker.conf
+
+6.进入/etc/fdfs目录，修改storage.conf文件
+
+vi /etc/fdfs/storage.conf
+
+//找到base_path
+base_path=你上面创建的数据存储目录(我这里是/usr/local/FastDFS/storage)
+//找到base_path0
+store_path0=这里是默认的存储路径自定义(我这里是/usr/local/FastDFS/storage)
+//找到tracker_server
+tracker_server=你的服务器的ip:22122
+
+7.启动storage
+
+/usr/bin/fdfs_storaged /etc/fdfs/storage.conf
+
+8.配置测试
+
+从编译完的FastDFS目录复制libfdfsclient.so 到/usr/lib目录
+
+cd /usr/local/src/FastDFS/client
+cp libfdfsclient.so /usr/lib
+
+9.修改测试配置文件
+
+vi /etc/fdfs/client.conf
+
+//找到base_path
+base_path=你上面创建的数据存储目录(我这里是/usr/local/FastDFS/client)
+tracker_server=你的服务器的ip:22122
+
+### 五.测试上传
+
+**注意：先关闭防火墙再测试**
+
+测试：
+例如将/home下的a.png上传到服务则有：
+
+/usr/bin/fdfs_test /etc/fdfs/client.conf upload /home/a.png
+/usr/bin/fdfs_test /etc/fdfs/client.conf upload 要上传的文件路径
+ 
+上传成功会返回你上传文件的访问路径
+
+比如：http://服务器IP/group1/M00/00/00/wKhMeGNL3ROAR2GaABDQ7Qx13Gk393_big.png
+
+**此时浏览器还无法访问返回的这个链接，这里我们使用nginx进行代理**
+
+### 六.安装fastdfs-nginx-module插件(nginx和fastdfs的桥梁插件模块)
+
+1.依赖的安装(前面已经安装过，如果没安装请安装一下)
+
+yum install -y gcc-c++
+yum install -y pcre pcre-devel
+yum install -y zlib zlib-devel
+yum install -y openssl openssl-devel
+
+2.解压fastdfs-nginx-module
+
+cd /usr/local/src
+tar -zxf fastdfs-nginx-module_v1.16.tar.gz
+
+3.进入解压后的目录fastdfs-nginx-module/src/，修改配置config文件，将所有的/local去掉
+
+把CORE_INCS="$CORE_INCS /usr/local/include/fastdfs /usr/local/include/fastcommon/"
+修改为：CORE_INCS="$CORE_INCS /usr/include/fastdfs /usr/include/fastcommon/"
+ 
+把CORE_LIBS="$CORE_LIBS -L/usr/local/lib -lfastcommon -lfdfsclient"
+修改为：CORE_LIBS="$CORE_LIBS -L/usr/lib -lfastcommon -lfdfsclient"
+
+4.复制fastdfs-nginx-module/src/mod_fastdfs.conf 到/etc/fdfs目录下
+
+cp mod_fastdfs.conf /etc/fdfs
+
+5.在/etc/fdfs目录下修改mod_dastdfs.conf文件
+
+vim /etc/fdfs/mod_fastdfs.conf
+
+//找到tracker_server
+tracker_server=你的服务器IP:22122
+ 
+storage_server_port=23000
+group_name=group1
+ 
+//找到url_have_group_name
+url_have_group_name = true
+//找到store_path0
+store_path0=你上面设置的默认数据存储目录(我这里是/usr/local/FastDFS/storage)
+
+### 七.nginx配置（用于做文件请求http代理服务器）
+
+1.解压nginx并进入nginx目录
+
+cd /usr/local/src
+tar -zxf nginx-1.8.0.tar.gz
+cd nginx-1.8.0
+
+2、如果已经安装了nginx
+
+//找到已安装的nginx源码包，进入文件夹
+
+1.配置了ssl的配置方法:
+./configure --prefix=/usr/local/nginx --with-http_ssl_module --add-module=/usr/local/src/fastdfs-nginx-module/src/(后面的"="号后面路径是你的插件安装地址)
+ 
+2.没有配置ssl的配置方法：
+./configure --add-module=/usr/local/src/fastdfs-nginx-module/src/("="号后面路径是你的插件安装地址)
+ 
+编译和安装(注意一定不要make install)
+make //编译
+cp ./objs/nginx /usr/local/nginx/sbin/     把编译后的nginx替换你安装的nginx
+
+3.如果没有安装nginx
+①.进入/usr/local/src路径下解压安装包
+
+cd /usr/local/src
+tar -zxf nginx-1.8.0.tar.gz
+
+②.进入解压后的目录文件，执行第2步中已安装nginx未配置ssl的步骤
+
+cd nginx-1.8.0
+./configure --add-module=/usr/local/src/fastdfs-nginx-module/src/
+
+③.编译 安装
+
+make && make install
+
+④.安装好的nginx目录应该在/usr/local目录下面
+
+4.最后，配置nginx.conf文件
+
+vim /usr/local/nginx/conf/nginx.conf
+
+server {
+        listen       8088;//如果没有改过端口号，默认是80端口
+        server_name  localhost;
+ 
+        location /group1/M00/{
+            ngx_fastdfs_module;
+        }
+ 
+}
+
+5.重启nginx服务
+
+### 八、最后浏览器访问测试
+
+使用浏览器打开之前返回的网址，便可以看到上传到服务器的图片了
+
+![](https://img-blog.csdnimg.cn/cba97c13743445e4af3f4e754731383e.png)
+
+ 如果忘记了地址，可以再次执行第四步后浏览器打开返回的网址
+
 
 
 
@@ -4118,6 +4348,232 @@ datasource:
 > @DS() 要用在实现类或者实现类方法上
 >  调用时，使用  service 层面的方法
 
+
+##  Linux数据库安装
+
+### 一.下载压缩包
+
+> 先使用指令   
+> getconf GNU_LIBC_VERSION   
+> 查看gilbc 版本信息，去mysql官网下载对应的安装包，这样可以避免数据库初始化时出现问题。
+
+### 二.解压安装
+
+1.执行解压命令
+
+> tar -xvf mysql-8.0.32-linux-glibc2.12-x86_64.tar.xz
+
+2.重命名为mysql-8.0
+
+> mv mysql-8.0.32-linux-glibc2.12-x86_64 mysql-8.0
+
+3.进入mysql-8.0的目录，新建文件夹
+
+>  cd  mysql-8.0/ 
+>  mkdir data
+>  mkdir log
+>  mkdir tmp
+
+### 三.创建用户组以及用户
+
+1.新增用户组mysql
+
+> groupadd mysql
+
+2.新增用户mysql 密码mysql
+
+> useradd -g mysql mysql
+
+3.授权，指向mysql的安装目录
+
+> chown -R mysql.mysql /appusr/apphome/mysql-8.0/
+
+### 四.初始化数据库
+
+1.进入安装目录
+
+> cd /XXXXX/XXXX/mysql-8.0/
+
+2.初始化数据库
+
+> 执行命令：
+> ./bin/mysqld --user=mysql --lower-case-table-names=1 (表名大小写关闭) --basedir=/appusr/apphome/mysql-8.0/ --datadir=/appusr/apphome/mysql-8.0/data/ --initialize ;
+
+* 1.如果在配置文件中加上 lower-case-table-names=1 而在初始化时不指定，会有错误提示；
+* 2.上述解决办法：a.删除 data 文件夹下所有内容，重新初始化； b.删除掉/var/lib/mysql文件夹下面的所有的文件( rm -rf /var/lib/mysql) ,再修改my.cnf 文件( vi /etc/my.cnf) ,配置文件中添加 lower_case_table_names=1，重启。
+
+3.记住临时密码
+
+> temporary password is generated for root@localhost: =cFY9lpinfc6
+
+### 五.修改配置文件
+
+* 注意修改相应的路径
+
+```markdown
+[mysql]
+#basedir=/soft/mysql-8.0
+#datadir=/soft/mysql-8.0/data/
+socket=/soft/mysql-8.0/tmp/mysql.sock
+port=13336
+user=mysql
+#skip-grant-tables
+#指定日志时间为系统时间
+#log_timestamps=SYSTEM
+#log-error=/appusr/apphome/mysql-8.0/log/mysql.err
+#指定字符集为utf8，因为mysql8.0中的默认字符集为utfmb4，会和其他程序引起兼容性问题
+default-character-set=utf8
+
+[mysqld]
+basedir=/soft/mysql-8.0
+datadir=/soft/mysql-8.0/data
+socket=/soft/mysql-8.0/tmp/mysql.sock
+port=13336
+user=mysql
+log_timestamps=SYSTEM
+collation-server = utf8_unicode_ci
+character-set-server = utf8
+#指定默认认证的加密方式，mysql8.0中默认方式为caching_sha2_password，引起老版本兼容性问题
+default_authentication_plugin= mysql_native_password
+#skip-grant-tables
+
+#大小写关闭
+lower_case_table_names=1
+
+#group by 检验关闭
+#可以使用 select @@sql_mode  查看当前的 sql_mode 去掉 group by；
+
+sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'
+ 
+[mysqld_safe]
+log-error=/soft/mysql-8.0/log/mysqld_safe.err
+pid-file=/soft/mysql-8.0/tmp/mysqld.pid
+socket=/soft/mysql-8.0/tmp/mysql.sock
+#skip-grant-tables
+ 
+[mysql.server]
+basedir=/soft/mysql-8.0
+datadir=/soft/mysql-8.0/data
+socket=/soft/mysql-8.0/tmp/mysql.sock
+port=13336
+user=mysql
+#skip-grant-tables
+ 
+[mysqladmin]                                                                                                                                 
+socket=/soft/mysql-8.0/tmp/mysql.sock
+
+```
+
+### 六.建立Mysql服务
+
+1.进入mysql安装目录
+
+> cd /appusr/apphome/mysql-8.0/
+
+2. 添加Mysql到系统服务
+
+> cp -a ./support-files/mysql.server /etc/init.d/mysql
+> chmod +x /etc/init.d/mysql
+> chkconfig --add mysql
+ 
+3.检查服务是否生效
+
+> chkconfig --list mysql
+
+如下
+
+```
+[root@centos-tianmen mysql-8.0]# cp -a ./support-files/mysql.server /etc/init.d/mysql 
+[root@centos-tianmen mysql-8.0]# chmod +x /etc/init.d/mysql
+[root@centos-tianmen mysql-8.0]# chkconfig --add mysql
+[root@centos-tianmen mysql-8.0]# chkconfig --list mysql
+ 
+注：该输出结果只显示 SysV 服务，并不包含
+原生 systemd 服务。SysV 配置数据
+可能被原生 systemd 配置覆盖。 
+ 
+      要列出 systemd 服务，请执行 'systemctl list-unit-files'。
+      查看在具体 target 启用的服务请执行
+      'systemctl list-dependencies [target]'。
+ 
+mysql          	0:关	1:关	2:开	3:开	4:开	5:开	6:关
+[root@centos-tianmen mysql-8.0]# 
+```
+
+4.启动mysql服务
+
+> service mysql start;
+
+如有报错文件不存在，新建缺失的文件，授权mysql
+
+```
+[root@centos-tianmen mysql-8.0]# service mysql start;
+Starting MySQL... SUCCESS!
+```
+
+5.查看服务状态
+
+> service mysql status;
+
+```
+[root@centos-tianmen mysql-8.0]# service mysql status;
+ SUCCESS! MySQL running (54691)
+```
+
+### 七.修改密码
+
+1.进入mysql安装目录的bin目录
+
+> cd /appusr/apphome/mysql-8.0/bin/
+
+2.使用上面的临时密码登录，执行命令
+
+> ./mysql -uroot -p
+
+如下：
+
+```
+[root@centos-tianmen bin]# ./mysql -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 8.0.32
+ 
+Copyright (c) 2000, 2023, Oracle and/or its affiliates.
+ 
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+ 
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+ 
+mysql> 
+```
+
+3.修改密码
+
+> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '新密码';
+
+### 八.开启远程访问
+
+> 实质修改  'root'@'localhost'  --->  root'@'%'
+
+```
+mysql> CREATE USER 'root'@'%' IDENTIFIED BY '密码';(新建用户)
+Query OK, 0 rows affected (0.03 sec)
+ 
+mysql> GRANT ALL ON *.* TO 'root'@'%';（授权）
+Query OK, 0 rows affected (0.02 sec)
+ 
+mysql> ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '密码';（修改密码）
+Query OK, 0 rows affected (0.01 sec)
+ 
+mysql> FLUSH PRIVILEGES;（刷新权限）
+Query OK, 0 rows affected (0.02 sec)
+```
+
+
+
 -----
 
 # ⛑ Linux小芝士
@@ -4432,6 +4888,9 @@ total size is 390,744,347  speedup is 6,317.82
 ```shell
 # 后台运行jar脚本
 nohup java -jar hussar-web.jar >start.log 2>&1 &
+
+#控制内存信息
+nohup java -jar -Xms4G -Xmx8G -XX:PermSize=4G -XX:MaxPermSize=8G hussar-web.jar >start.log 2>&1 &
 
 运行	./脚本.sh  || sh 脚本.sh
 
@@ -6030,10 +6489,15 @@ nginx -c nginx.conf
 
 3.如果需要停止nginx服务，可以使用以下命令：
 ```
-nginx -s stop
+./nginx -s stop
 ```
 
-4.样例
+4.如果需要重启nginx服务，可以使用以下命令：
+```
+./nginx -s reload
+```
+
+5.样例
 ```config
 //Linux环境下
  sbin 目录下 --->   ./nginx -c XXXXXX(地址)/nginx.conf
@@ -6616,9 +7080,543 @@ http {
 
 ```
 
+### 代理转发
+
+```
+
+#user  nobody;
+worker_processes  1;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    resolver 8.8.8.8;
+    include       mime.types;
+    default_type  application/octet-stream;
+    #log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+    #                  '$status $body_bytes_sent "$http_referer" '
+    #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+    #access_log  logs/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  65;
+    client_max_body_size 500m;
+
+    #gzip  on;
+
+    server {
+        listen       17003;
+        server_name  localhost;
+
+		#后端
+		location /biddingJc {
+
+			proxy_pass   http://192.168.129.59:18883/biddingJc/;
+                        client_max_body_size 500M;
+                        client_body_buffer_size 500M;
+                        proxy_connect_timeout 300s;
+                        proxy_send_timeout 300s;
+                        proxy_read_timeout 300s;
+
+			proxy_set_header Host $http_host;
+
+			proxy_set_header X-Real_IP $remote_addr;
+
+			proxy_set_header REMOTE-HOST   $remote_addr;
+
+			proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+
+			add_header   Access-Control-Allow-Origin *;
+
+			add_header   Access-Control-Allow-Methods "DELETE,POST,GET,OPTIONS";
+
+			add_header   Access-Control-Allow-Headers "Origin,Authorization,Accept";
+
+			add_header   Access-Control-Allow-Credentials true;
+
+		}
+
+		#前端
+		location / {
+			root   /soft/jc/biddingJc;
+			index  index.html index.html;
+                        client_max_body_size 500M;
+                        client_body_buffer_size 500M;
+
+                        proxy_connect_timeout 300s;
+                        proxy_send_timeout 300s;
+                        proxy_read_timeout 300s;
+
+		}
+
+}
+
+
+
+```
+
+## 安装
+
+### Linux 环境
+
+#### 1.下载安装包
+
+官网([http://nginx.org/en/download.html](http://nginx.org/en/download.html)),下载1.22.1版本的nginx。
+
+#### 2.解压
+
+将nginx-1.22.1.tar.gz上传到/opt/hussar-cloud目录下,执行：
+
+tar  -zxvf  nginx-1.22.1.tar.gz
+
+生成nginx-1.22.1文件夹
+
+#### 3. 编译
+
+进入/opt/hussar-cloud/nginx1.22.1目录下，执行：
+
+a.直接安装特定插件
+./configure --with-http_stub_status_module --with-http_ssl_module --prefix=/opt/hussar-cloud/nginx-1.22.1
+
+b.空配置
+./configure
+
+**补充**
+```markdown
+[root@localhost nginx-1.14.0]# ./configure --help=> 查看安装配置项
+--help
+打印帮助信息。
+ 
+--prefix=PATH
+设置软件安装目录路径。
+ 
+--sbin-path=PATH
+设置可执行文件安装目录路径。
+ 
+--modules-path=PATH
+设置模块安装目录路径。
+ 
+--conf-path=PATH
+设置配置文件安装目录路径。
+ 
+--error-log-path=PATH
+设置错误日志文件安装目录路径。
+ 
+--pid-path=PATH
+设置进程文件安装目录路径。
+ 
+--lock-path=PATH
+设置NGINX锁文件安装目录路径，当NGINX运行时会自动创建该文件，用于在一台服务器上只允许运行一个NGINX服务。
+ 
+--user=USER
+设置运行进程时所使用的系统用户，如果没有指定，则默认为nobody，就算安装时不指定，后期也可以通过修改"nginx.conf"配置文件中的"user"项修改。
+ 
+--group=GROUP
+设置运行进程时所使用的用户组。
+ 
+--build=NAME
+设置编译名，一个描述，没有任何其他作用。
+ 
+--builddir=DIR
+设置编译目录，会将编译后生成的文件写入到这个目录中。
+ 
+--with-select_module
+--without-select_module
+启用或禁用select事件驱动模型。默认情况下在Linux2.6以上的内核版本中，Nginx支持使用Epoll高效的事件模型，我们可以在配置文件中使用"use epoll"指令开启它。
+ 
+--with-poll_module     
+--without-poll_module                                 
+启用或禁用poll事件驱动模型。默认情况下在Linux2.6以上的内核版本中，Nginx支持使用Epoll高效的事件模型，我们可以在配置文件中使用"use epoll"指令开启它。
+ 
+--with-threads
+--with-file-aio
+启用线程池功能。一般情况下主机有几核处理器在启动Nginx时就会创建几个Worker工作进程，进程创建线程处理每一个请求，当在CPU密集型计算、资源访问的环境下，很多请求都会开启对应的线程，可能会由于磁盘IO限制导致的线程处理请求时间变长，这不是我们期望看到的，我们就可以启用线程池功能，让请求排队等待处理，并且可以充分利用CPU提高处理效率。开启线程池需要AIO的支持。
+启用异步文件IO（AIO）支持。一般用于大文件传输的场景下。
+ 
+--with-http_ssl_module
+启用HTTP_SSL模块，用于构建HTTPS服务。默认情况下不构建此模块。
+ 
+--with-http_v2_module
+启用HTTP_V2模块，新的HTTP协议，相比HTTP1更优更快。默认情况下不构建此模块。
+ 
+--with-http_realip_module
+启用HTTP_Realip模块，用于修改客户端请求头中客户端IP地址值，一般用于反向代理中，将真实的客户端IP传送给后端的应用服务器。默认情况下不构建此模块。
+ 
+--with-http_addition_module
+启用HTTP_Addition模块，用于在响应之前和之后添加文本。默认情况下不构建此模块。
+ 
+--with-http_xslt_module 
+--with-http_xslt_module=dynamic
+启用HTTP_Xslt模块，这个模块是一个过滤器，它可以通过XSLT模板转换成XML响应。需要ibxml2和libxslt库的支持。默认情况下不构建此模块。
+启用HTTP_Xslt动态模块，允许在配置文件中通过"load_module"指令手动启用和禁用模块的使用。默认情况下不构建此模块。
+ 
+--with-http_image_filter_module
+--with-http_image_filter_module=dynamic
+启用HTTP_Image_Filter模块，这个模块是一个集成图片处理器，我们可以使用它转换JPEG、GIF、PNG和WEBP格式的图像，验证这些格式图像的有效型（是不是此格式的图像），输出JSON格式的图像信息，旋转图像，按比例缩放图像，剪切图片等。默认情况下不构建此模块。
+启用HTTP_Image_Filter动态模块，允许在配置文件中通过"load_module"指令手动启用和禁用模块的使用。默认情况下不构建此模块。
+ 
+--with-http_geoip_module
+--with-http_geoip_module=dynamic
+启用HTTP_Geoip模块，这个模块用于处理不同地区的访问，当来自某一个区域的访问时将其重定向到对应的服务或者项目上，需要MaxMind GeoIP库的支持。默认情况下不构建此模块。
+启用HTTP_Geoip动态模块，允许在配置文件中通过"load_module"指令手动启用和禁用模块的使用。默认情况下不构建此模块。
+ 
+--with-http_sub_module
+启用HTTP_Sub模块，这个模块是一个过滤器，用于修改响应的内容，可以将一个指定的字符串替换成另一个字符串。默认情况下不构建此模块。
+ 
+--with-http_dav_module     
+启用HTTP_DAV模块，用于通过WEBDAV协议提供WEB的文件管理功能，类似于一个WEB的文件管理器，可以对服务器的文件进行管理。默认情况下不构建此模块。
+ 
+--with-http_flv_module
+--with-http_mp4_module
+启用HTTP_FLV模块，用于为Flash Video（FLV）文件提供伪流视频服务端支持，开启它则允许在网页上播放FLV格式的视频。默认情况下不构建此模块。
+启用HTTP_MP4模块，用于为MP4格式的视频文件提供伪流视频服务端支持，开启它则允许在网页上播放MP4格式的视频。默认情况下不构建此模块。
+ 
+--with-http_gunzip_module
+--with-http_gzip_static_module
+启用HTTP_Gunzip模块，用于为不支持"gzip"编码方式的客户端解压响应，有些浏览器不支持"gzip"编码格式的请求和响应传输，若服务器开启了内容传输压缩功能（Gzip），则需要开启此项，服务器会本地解压数据，将数据传送给浏览器客户端。默认情况下不构建此模块。
+启用HTTP_Gzip_Static模块，用于将静态内容压缩成".gz"为文件扩展名的预压缩文件，并缓存在本地，在响应时会将此文件发送以替代普通文件，运用此模块的好处就是不需要（Gzip）每次传输时都需要对文件进行处理压缩。在用于Squid+Nginx环境下，当Nginx启用（Gzip）内容传输压缩功能时，在使用Squid3.0以前版本搭建环境时会发现，Squid返回给客户端的并不是压缩状态，这就是由于没有启用此模块导致的。默认情况下不构建此模块。
+ 
+--with-http_auth_request_module
+启用HTTP_Auth_Request模块，此模块是一个请求验证模块，可以使用外部服务器或服务对网站的每个请求进行身份验证，当用户访问时，Nginx会向用于验证请求的外部服务器发出验证请求，若返回的状态码为200，则通过允许访问，若返回401或403，则访问会被拒绝。默认情况下不构建此模块。
+ 
+--with-http_random_index_module
+启用HTTP_Random_Index模块，随机主页模块，当用户访问时，随机响应一个主页，而并非由"index"指令定义的一个主页，而是从主页池中随机选中一个主页面返回。默认情况下不构建此模块。
+ 
+--with-http_secure_link_module
+启用HTTP_Secure_Link模块，防盗链模块，用于检查请求链接的权限以及是否过期，多用于文件下载防盗链。默认情况下不构建此模块。
+ 
+--with-http_degradation_module
+启用HTTP_Degradation模块，用于当主机剩余内存较低时，用户请求访问，Nginx会对某些"location"的请求返回204或444的响应码。默认情况下不构建此模块。
+ 
+--with-http_slice_module
+启用HTTP_Slice模块，此模块是一个过滤器，用于将一个大的完整的文件分割成多个小块文件，分段传送给用户，一般用于大文件传输的场景下，使用它可以让用户快速的得到响应。默认情况下不构建此模块。
+ 
+--with-http_stub_status_module
+启用HTTP_Stub_Status模块，状态信息统计模块，用于返回一个Nginx状态信息统计信息页面，管理员访问这个页面可以获取Nginx的请求处理、当前连接、等待连接等统计信息，一般用于监控Nginx的运行状态。默认情况下不构建此模块。
+ 
+--without-http_charset_module
+禁用HTTP_Charset模块，此模块用于将指定的字符集添加到"Content-Type"响应头字段中。此外此模块还可以将数据从一个字符集转换为另一个字符集，此模块用于字符集设置。不建议禁用。
+ 
+--without-http_gzip_module
+禁用HTTP_Gzip模块，此模块用于HTTP响应内容传输压缩，可以将响应内存在传输时将其压缩成Gzip编码格式的响应传送给客户端，使用Gzip编码格式响应内容体积会变小，会提高传输效率。不建议禁用。
+ 
+--without-http_ssi_module
+禁用HTTP_SSI模块，此模块是一个过滤器，用于处理通过它响应中的SSI（Server Side Includes）命令。目前支持的SSI命令列表并不完整，SSI指令是一种可以嵌入WEB页面的一种语法指令。
+ 
+--without-http_userid_module
+禁用HTTP_Userid模块，此模块用于识别客户端的Cookie。可以使用嵌入变量"$uid_got"和"$uid_set"记录已接受和设置的Cookie。
+ 
+--without-http_access_module
+禁用HTTP_Access模块，此模块用于限制对某些客户端地址的访问，Allow or Deny。不建议禁用。
+ 
+--without-http_auth_basic_module
+禁用HTTP_Auth_Basic模块，该模块用于HTTP基本身份验证，使用用户名和密码来限制对资源的访问。
+ 
+--without-http_mirror_module
+禁用HTTP_Mirror模块，该模块用于将正式环境的流量拷贝到镜像（测试）环境下，一般用于测试环境引入真实环境的流量实现对测试环境的压力测试。
+ 
+--without-http_autoindex_module
+禁用HTTP_Autoindex模块，该模块用于在处理以斜杠字符（'/'）结尾的请求，并在找不到索引文件的情况下生成目录列表。
+ 
+--without-http_geo_module
+禁用HTTP_Geo模块，该模块用于从指定变量中获取客户端的IP地址，并将其嵌入到另外一个变量中。默认情况下从"$remote_addr"变量中取得客户端的IP地址。我们可以通过它结合"HTTP_Upstream"实现对来源客户端的负载均衡，当来自不同的客户端请求时，将其负载均衡给后端的不同的服务器处理；还可以使用它结合"HTTP_Map"+"HTTP_Limit_Conn"模块实现对来源客户端的限速功能。
+ 
+--without-http_map_module
+禁用HTTP_Map模块，该模块用于创建一个变量的映射表，结果变量可以是一个字符串也可以是另外一个变量。
+ 
+--without-http_split_clients_module
+禁用HTTP_Splic_Clients模块，该模块用于创建适用于A/B测试的变量，AB测试也称之为拆分测试，也就是将一个项目的两个不同版本发布，看用户更喜欢用于那个版本，若版本A受欢迎则发布版本A。
+ 
+--without-http_referer_module
+禁用HTTP_Referer模块，该模块用于防盗链，用于阻止对请求头部"referer"字段具有无效值的请求访问，可以设置一个白名单，非白名单的无效来源网址的连接则会拒绝请求，使用此模块我们还需考虑到，即使对于有效的请求，常规浏览器也可能不发送"referer"字段。不建议禁用。
+ 
+--without-http_rewrite_module
+禁用HTTP_Rewerte模块，该模块用于地址重写，用于将来源请求地址重定向到指定的地址上，可以保护真实的地址，增加安全性，该模块需要PCRE库的支持。不建议禁用。
+ 
+--without-http_proxy_module
+--without-http_fastcgi_module
+--without-http_uwsgi_module
+--without-http_scgi_module
+--without-http_grpc_module
+禁用HTTP_Proxy模块，该模块用于将请求代理传递到另外一台WEB服务器去处理，Nginx的核心模块。不建议禁用。
+禁用HTTP_FastCGI模块，该模块用于将请求代理传递到另外一台FastCGI服务器去处理，一般用于反代PHP。不建议禁用。
+禁用HTTP_UwSGI模块，该模块用于将请求代理传递给另外一台UwSGI服务器去处理。
+禁用HTTP_SCGI模块，该模块用于将请求代理传递给另外一台SCGI服务器去处理。
+禁用HTTP_Grpc模块，该模块用于将请求代理传递给另外一台Grpc服务器去处理。
+ 
+--without-http_memcached_module
+禁用HTTP_Memcached模块，该模块用于Nginx从Memcached服务器获取响应内容。一般用于Nginx+后端服务器+Memcached的环境下，当用户第一请求时，Nginx去Memcached中读取缓存数据，若没有则就请求后端的服务器去处理，后端服务器将静态页面的数据写入到Memcached缓存服务器中并返回响应给Nginx传递给用户，当用户第二次请求时则Nginx直接从Memcached缓存服务器中获取缓存的静态页面内容，Memcached缓存服务器是基于内存的，所以可以减少磁盘IO的使用，提高响应效率。
+ 
+--without-http_limit_conn_module
+禁用HTTP_Limit_Conn模块，该模块用于限制并发连接数量以及下载带宽限制。
+ 
+--without-http_limit_req_module
+禁用HTTP_Limit_Req模块，该模块用于限制请求数量，可以限制请求的频率。
+ 
+--without-http_empty_gif_module
+禁用HTTP_Empty_Gif模块，该模块会在内容中常驻的一个1X1的透明空白的GIF图像，当用户请求时，返回该图像，一般用于测试。
+ 
+--without-http_browser_module
+禁用HTTP_Browser模块，该模块用于创建变量，变量的值取决于请求头中"user-agent"的值，一般用于区别新式或者旧式浏览器，若新式浏览器则将请求重定向到新式的WEB页面中，呈现新页面，若为旧式浏览器则将返回旧式的WEB页面。
+ 
+--without-http_upstream_hash_module
+--without-http_upstream_ip_hash_module
+--without-http_upstream_least_conn_module
+禁用HTTP_Upstream_Hash模块，该模块提供了由"Upstream"指令定义的一组服务器的负载均衡方法"Hash"，该方法基于散列键值（hash），它会将客户端+服务端的映射关系存放到一个散列键值表中，当客户端第二次请求时则会匹配关系将请求转发至后端的同一台服务器上，实现会话保持功能。该模块提供指令"hash",在会话保持中，我们唯一能标识客户端的标志就是SessionID，所以我们可以使用指令"hash $cookie_jsession"实现会话保持功能。不建议禁用。
+禁用HTTP_Upstream_IP_Hash模块，该模块提供了由"Upstream"指令定义的一组服务器的负载均衡方法"ip_hash"，该方法也用于会话保持，不过它是基于客户端IP的Hash方法，由于用户可能是ADSL接入的网络，所以客户端可能受动态IP影响会发生变化，所以一般不建议采用这种方法。
+禁用HTTP_Upstream_Least_Conn模块，该模块提供了由"Upstream"指令定义的一组服务器的负载均衡方法"least_conn"，该方法用于将请求传递到具有最少活动连接、权重较高（性能最好）的后端服务器上去处理。
+ 
+--without-http_upstream_keepalive_module
+禁用HTTP_Upstream_Keepalive模块，该模块可以为由"Upstream"指令定义的一组服务器提供保持长连接的功能，使用它则会为每个Worker工作进程与后端服务器保持空闲的长连接，连接数由"keepalive"指令指定，当空闲的长连接数量超过指定值时，将关闭最近最少使用的连接。
+ 
+--without-http_upstream_zone_module
+禁用HTTP_Upstream_Zone模块，该模块可以将由"Upstream"指令定义的服务器组运行时的状态存储在共享内存区域中。
+
+--with-http_perl_module
+--with-http_perl_module=dynamic
+启用HTTP_Perl模块，用于在Perl中实现位置和变量处理程序，并可以将Perl调用到SSI中。默认情况下不构建此模块。
+启用HTTP_Perl动态模块，允许在配置文件中通过"load_module"指定手动启用和禁用模块的使用。默认情况下不构建此模块。
+ 
+--with-perl_modules_path=PATH
+设置一个用于保留Perl模块的目录路径。
+ 
+--with-perl=PATH
+设置Perl可执行命令文件的路径。
+ 
+--http-log-path=PATH
+设置访问日志文件存放目录路径。安装后，可以在主配置文件中使用"access_log"指令修改。
+ 
+--http-client-body-temp-path=PATH
+设置用于存储客户端请求主体的临时文件存放目录路径。安装后，可以在主配置文件中使用"client_body_temp_path"指令修改。
+ 
+--http-proxy-temp-path=PATH
+设置用于存储从代理服务器接受的数据临时文件存放目录路径。安装后，可以在主配置文件中使用"proxy_temp_path"指令修改。
+ 
+--http-fastcgi-temp-path=PATH
+设置用于存储从FastCGI服务器接受的数据临时文件存放目录路径。安装后，可以在主配置文件中使用"fastcgi_temp_path"指令修改。
+ 
+--http-uwsgi-temp-path=PATH
+设置用于存储从UwSGI服务器接受的数据临时文件存放目录路径。安装后，可以在主配置文件中使用"uwsgi_temp_path"指令修改。
+ 
+--http-scgi-temp-path=PATH
+设置用于存储从SCGI服务器接受的数据临时文件存放目录路径。安装后，可以在主配置文件中使用"scgi_temp_path"指令修改。
+ 
+--without-http
+禁用HTTP_Core模块，该模块为Nginx的核心模块，用于提供HTTP服务所有核心功能。
+ 
+--without-http-cache
+禁用HTTP缓存。
+ 
+--with-mail
+--with-mail=dynamic
+启用HTTP_Mail_Core模块，该模块为Nginx的核心模块，用于提供POP3/IMAP4/SMTP邮件代理服务。默认情况下不构建此模块。
+启用HTTP_Mail_Core动态模块，允许在配置文件中通过"load_module"指令手动启用和禁用模块的使用。默认情况下不构建此模块。
+ 
+--with-mail_ssl_module
+启用Mail_SSL模块，用于邮件代理服务支持SSL/TLS协议，需要OpenSSL库的支持。默认情况下不构建此模块。
+ 
+--without-mail_pop3_module
+禁用Mail_POP3模块，当启用HTTP_Mail_Core模块时，若你不想使用POP3协议，则可以考虑单独禁用此模块。不建议禁用。
+ 
+--without-mail_imap_module
+禁用Mail_IMAP模块，当启用HTTP_Mail_Core模块时，若你不想使用IMAP4协议，则可以考虑单独禁用此模块。不建议禁用。
+ 
+--without-mail_smtp_module
+禁用Mail_SMTP模块，当启用HTTP_Mail_Core模块时，若你不想使用SMTP协议，则可以考虑单独禁用此模块。不建议禁用。
+ 
+--with-stream
+--with-stream=dynamic 
+启用Stream_Core模块，Nginx的核心模块，用于实现TCP/UDP代理和四层负载均衡功能。默认情况下不构建此模块。此模块自Nginx1.9.0版本开始可用。
+启用Stream_Core动态模块，允许在配置文件中通过"load_module"指令手动启用和禁用模块的使用。默认情况下不构建此模块。
+ 
+--with-stream_ssl_module
+启用Stream_SSL模块，用于提供SSL/TLS协议支持，需要OpenSSL库的支持。该模块用于Nginx四层负载功能中使用，需要开启Stream_Core模块。默认情况下不构建此模块。
+ 
+--with-stream_realip_module
+启用Stream_Realip模块，用于修改客户端请求头中客户端IP地址值，一般用于反向代理中，将真实的客户端IP传送给后端的应用服务器。该模块用于Nginx四层负载功能中使用，需要开启Stream_Core模块。默认情况下不构建此模块。
+ 
+--with-stream_geoip_module
+--with-stream_geoip_module=dynamic
+启用Stream_Geoip模块，用于处理不同地区的访问，当来自某一个区域的访问时将其重定向到对应的服务或者项目上，需要MaxMind GeoIP库的支持。该模块用于Nginx四层负载功能中使用，需要开启Stream_Core模块。默认情况下不构建此模块。
+启用Stream_Geoip动态模块，允许在配置文件中通过"load_module"指令手动启用和禁用模块的使用。默认情况下不构建此模块。
+ 
+--with-stream_ssl_preread_module
+启用Stream_SSL_Preread模块，用于从客户端Hello消息中提取信息，而不会终止SSL/TLS。该模块用于Nginx四层负载功能中使用，需要开启Stream_Core模块。默认情况下不构建此模块。
+ 
+--without-stream_limit_conn_module
+禁用Stream_Limit_Conn模块，该模块用于限制并发连接数量以及下载带宽限制功能。该模块用于Nginx四层负载功能中使用，当开启Stream_Core模块时自动开启此功能。不建议禁用。
+ 
+--without-stream_access_module
+禁用Stream_Access模块，该模块用于限制对某些客户端地址的访问。该模块用于Nginx四层负载功能中使用，当开启Stream_Core模块时自动开启此功能。不建议禁用。
+ 
+--without-stream_geo_module
+禁用Stream_Geo模块，该模块用于从指定变量中获取客户端的IP地址，并将其嵌入到另外一个变量中。默认情况下从"$remote_addr"变量中取得客户端的IP地址。该模块用于Nginx四层负载功能中使用，当开启Stream_Core模块时自动开启此功能。不建议禁用。
+ 
+--without-stream_map_module
+禁用Stream_Map模块，该模块用于创建一个变量的映射表，结果变量可以是一个字符串也可以是另外一个变量。该模块用于Nginx四层负载功能中使用，当开启Stream_Core模块时自动开启此功能。不建议禁用。
+ 
+--without-stream_split_clients_module
+禁用Stream_Splic_Clients模块，该模块用于创建适用于A/B测试的变量，AB测试也称之为拆分测试，也就是将一个项目的两个不同版本发布，看用户更喜欢用于那个版本，若版本A受欢迎则发布版本A。该模块用于Nginx四层负载功能中使用，当开启Stream_Core模块时自动开启此功能。
+ 
+--without-stream_return_module
+禁用Stream_Return模块，该模块用于向客户端发送指定值，然后关闭连接。该模块用于Nginx四层负载功能中使用，当开启Stream_Core模块时自动开启此功能。不建议禁用。
+ 
+--without-stream_upstream_hash_module
+--without-stream_upstream_least_conn_module
+禁用Stream_Upstream_Hash模块，该模块提供四层负载均衡的一种调度方法，一般用于基于SessionID的会话保持场景下，当开启Stream_Core模块时自动开启此功能。不建议禁用。
+禁用Stream_Upstream_IP_Hash模块，该模块提供四层负载均衡的一种调度方法，基于来源IP的会话保持方法，由于来源IP的不稳定性，我们一般很少采用此种方法。当开启Stream_Core模块时自动开启此功能。
+ 
+--without-stream_upstream_zone_module
+禁用Stream_Upstream_Zone模块，该模块可以将由"Upstream"指令定义的服务器组运行时的状态存储在共享内存区域中。该模块用于Nginx四层负载功能中使用，当开启Stream_Core模块时自动开启此功能。
+ 
+--with-google_perftools_module
+启用Google_Perftools模块，用于可以使用Google Performance Tools分析Nginx的工作进程，分析程序性能瓶颈。该模块适用于Nginx开发人员，默认情况下不构建此模块。
+ 
+--with-cpp_test_module
+启用Cpp_Test模块，用于C++测试。该模块适用于Nginx开发人员，默认情况下不构建此模块。
+ 
+--add-module=PATH
+--add-dynamic-module=PATH
+添加第三方模块，需要指定第三方模块所在目录路径。
+添加第三方动态模块，需要指定第三方动态模块所在目录路径。
+ 
+--with-compat
+启用动态模块兼容性。
+ 
+--with-cc=PATH
+设置GCC编译器所在目录路径。
+ 
+--with-cpp=PATH
+设置GCC-C++编译器所在目录路径。
+ 
+--with-cc-opt=OPTIONS
+设置将添加到CFLAGS变量的其他参数，若在FreeBSD系统下使用PCRE库时，应指定"--with-ccc-opt="-I /usr/local/include""。若你在使用select事件驱动模型时，还可以使用它设置可打开的最大文件描述符数量，突破1024的限制，比如"--with-ccc-opt="-D FD_SETSIZE=2048""
+ 
+--with-ld-opt=OPTIONS
+设置将在连接期间使用的其他参数，若在FreeBSD系统下使用PCRE库时，应指定"--with-ccc-opt="-L /usr/local/lib""。
+ 
+--with-cpu-opt=CPU
+设置CPU型号，为特定的CPU执行编译操作，有效的值：pentium, pentiumpro, pentium3, pentium4, athlon, opteron, sparc32, sparc64,ppc64。
+ 
+--without-pcre
+禁用PCRE库的使用。
+ 
+--with-pcre
+启用PCRE库的使用。PCRE库是一个Perl库，包含Perl兼容的正则表达式。
+ 
+--with-pcre=DIR
+若你是源码安装的PCRE库，则需要通过此项设置PCRE库的所在目录路径。
+ 
+--with-pcre-opt=OPTIONS
+为PCRE设置其他要编译的选项。
+ 
+--with-pcre-jit
+启用"即时编译"的支持，开启此项，则会利用"pcre_jit"指令快速编译PCRE库。
+ 
+--with-zlib=DIR
+若你是源码安装的Zlib库，则需要通过此项设置Zlib库的所在目录路径。当启用HTTP_Gzip模块的时候需要此库的支持。
+ 
+--with-zlib-opt=OPTIONS
+为Zlib设置其他要编译的选项。
+ 
+--with-zlib-asm=CPU
+为Zlib库的编译设置特定CPU，会加快编译速度，有效值：pentium, pentiumpro。
+ 
+--with-libatomic
+启用Libatomic_Ops库的使用。
+ 
+--with-libatomic=DIR
+若你是源码安装的Libatomic_Ops库，则需要通过此项设置Libatomic_Ops库的所在目录路径。
+ 
+--with-openssl=DIR
+若你是源码安装的OpenSSL库，则需要通过此项设置OpenSSL库的所在目录路径。
+ 
+--with-openssl-opt=OPTIONS
+为OpenSSL设置其他要编译的选项。
+ 
+--with-debug
+启用调试级别的日志。也可以手动修改主配置文件，使用"error_log /path/to/log debug;"指令设置调试级别的日志。
+
+```
+
+**可能会缺少插件**
+pcre-devel插件 、openssl和openssl-devel插件
+
+>//安装gcc
+  yum install gcc-c++
+  //安装PCRE pcre-devel
+  yum install -y pcre pcre-devel
+  //安装zlib
+  yum install -y zlib zlib-devel
+  //安装Open SSL
+  yum install -y openssl openssl-devel
+ 
+成功后，会生成Makefile文件
+
+再执行：make && make install，会生成sbin目录，包含启动文件
+
+#### 4.修改配置与启动服务
+
+
 -----
 
 # 📦Redis 
+
+## Redis安装
+
+### Linux 环境
+
+#### 1.下载安装包
+
+在官网([https://download.redis.io/releases](https://download.redis.io/releases))下载6.2.6版本的redis。
+
+#### 2. 解压
+
+将redis-6.2.6.tar.gz上传到 /opt/hussar-cloud，进入/opt/hussar-cloud目录下，执行：
+
+tar -zxvf redis-6.2.6.tar.gz。
+
+解压后生成redis-6.2.6文件夹
+
+#### 3.编译
+
+进入/opt/hussar-cloud/redis-6.2.6目录，执行：
+
+make
+
+执行后如果报错/bin/sh: cc: command not found，表示服务器没有编译c的环境，需要下载gcc插件。安装gcc后重新执行：make distclean && make
+
+编译通过后执行：
+
+make (安装路径)PREFIX=/opt/hussar-cloud/redis-6.2.6  install         
+
+安装成功后，会生成bin目录，里面有redis的相关服务
+
+#### 4.修改配置
+
+logfile指定了redis服务的日志输出文件，启动前需要创建对应的文件，不然启动会报文件不存在，redis.conf中配置的是./logs/redis.log，需要在/opt/hussar-cloud/redis-6.2.6目录下创建logs文件夹，创建redis.log文件
+
+#### 5.启动服务
+
+在/opt/hussar-cloud/redis-6.2.6目录下，执行：
+
+./bin/redis-server ./redis.conf
+
+----
 
 ## Redis Cluster集群搭建
 
