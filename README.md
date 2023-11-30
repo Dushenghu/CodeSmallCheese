@@ -3247,6 +3247,91 @@ server {
  如果忘记了地址，可以再次执行第四步后浏览器打开返回的网址
 
 
+## HTTP工具类(CloseableHttpClient)
+
+### 使用样例
+
+#### Get方法
+
+```java
+public JSONObject sendHttpGet(String url, List<NameValuePair> param) {  
+    CloseableHttpResponse response = null;  
+    JSONObject jsonObject = new JSONObject();  
+    CloseableHttpClient httpclient = HttpClients.createDefault();  
+  
+    try {  
+        URI uri = (new URIBuilder(url)).setParameters(param).build();  
+        HttpGet httpGet = new HttpGet(uri);  
+        response = httpclient.execute(httpGet);  
+        if (response.getStatusLine().getStatusCode() == 200) {  
+            jsonObject = JSON.parseObject(EntityUtils.toString(response.getEntity(), "UTF-8"));  
+        }  
+    } catch (Exception var19) {  
+        var19.printStackTrace();  
+    } finally {  
+        try {  
+            httpclient.close();  
+        } catch (IOException var18) {  
+            throw new ExtendLoginException("http连接关闭失败");  
+        }  
+  
+        try {  
+            if (HussarUtils.isNotEmpty(response)) {  
+                response.close();  
+            }  
+        } catch (IOException var20) {  
+            throw new ExtendLoginException("response关闭失败");  
+        }  
+  
+    }  
+  
+    return jsonObject;  
+}
+
+```
+
+#### Post方法
+
+```java
+public JSONObject sendHttpPost(String url, List<NameValuePair> param,List<NameValuePair> body) {  
+    CloseableHttpResponse response = null;  
+    JSONObject jsonObject = new JSONObject();  
+    CloseableHttpClient httpclient = HttpClients.createDefault();  
+  
+    try {  
+        URI uri = (new URIBuilder(url)).setParameters(param).build();  
+        HttpPost httpPost = new HttpPost(uri);  
+        // 设置传送的内容类型是json格式  
+        httpPost.setHeader("Content-Type", "application/json;charset=utf-8");  
+        // 接收的内容类型也是json格式  
+        httpPost.setHeader("Accept", "application/json;charset=utf-8");  
+        httpPost.setEntity(new StringEntity(body.toString(),"utf-8"));  
+        response = httpclient.execute(httpPost);  
+        if (response.getStatusLine().getStatusCode() == 200) {  
+            jsonObject = JSON.parseObject(EntityUtils.toString(response.getEntity(), "UTF-8"));  
+        }  
+    } catch (Exception var19) {  
+        var19.printStackTrace();  
+    } finally {  
+        try {  
+            httpclient.close();  
+        } catch (IOException var18) {  
+            throw new ExtendLoginException("http连接关闭失败");  
+        }  
+  
+        try {  
+            if (HussarUtils.isNotEmpty(response)) {  
+                response.close();  
+            }  
+        } catch (IOException var20) {  
+            throw new ExtendLoginException("response关闭失败");  
+        }  
+  
+    }    return jsonObject;  
+}
+```
+
+
 
 
 ****
