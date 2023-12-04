@@ -4751,7 +4751,24 @@ systemctl restart network #重启网卡
 service network restart   #重启网卡network服务
 systemctl enable network #开机启动网卡
 
+#### win10更新系统后  启动虚拟机报错
 
+> 系统更新后，VBox启动虚拟机报错：Error In supR3HardenedWinReSpawn ,Error relauching VirtualBox VM process:5 的问题
+
+具体操作：
+
+1.安装Virtualbox目录下的\drivers\vboxdrv\VBoxDrv.inf
+2.打开注册表编辑器 : win+R  -->  regedit  
+3.打开路径 
+"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\VBoxDrv"
+4.双击 Start 那一项，并把值设置为2，然后确认。
+5.CMD执行 "**bcdedit /set hypervisorlaunchtype off**"（以管理员身份启动）
+（实质：禁用 虚拟机监控程序）
+6.重启电脑
+
+补充：
+VirtualBox7.0.X版本并没有 vboxdrv 这个目录，取而代之的是 vboxsup 目录
+安装 Virtualbox 目录下的 \\drivers\\vboxsup\\VBoxSup.inf，其他同上
 
 
 
