@@ -4755,6 +4755,8 @@ systemctl enable network #开机启动网卡
 
 > 系统更新后，VBox启动虚拟机报错：Error In supR3HardenedWinReSpawn ,Error relauching VirtualBox VM process:5 的问题
 
+> https://blog.csdn.net/qq_45730349/article/details/121470304?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-0-121470304-blog-123720211.235^v39^pc_relevant_anti_vip_base&spm=1001.2101.3001.4242.1&utm_relevant_index=3
+
 具体操作：
 
 1.安装Virtualbox目录下的\drivers\vboxdrv\VBoxDrv.inf
