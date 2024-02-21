@@ -3331,8 +3331,127 @@ public JSONObject sendHttpPost(String url, List<NameValuePair> param,List<NameVa
 }
 ```
 
+#### 包含HTTPS证书跳过
 
+##### Get方法
 
+```java
+public JSONObject sendHttpGet(String url, List<NameValuePair> param) {  
+//org.apache.http.client.methods
+CloseableHttpResponse response = null;  
+//com.alibaba.fastjson
+JSONObject jsonObject = new JSONObject();  
+//org.apache.http.impl.client;
+CloseableHttpClient httpclient = HttpClients.createDefault();  
+  
+httpclient= (CloseableHttpClient) wrapClient(httpclient);  
+
+try {  
+URI uri = (new URIBuilder(url)).setParameters(param).build();  
+HttpGet httpGet = new HttpGet(uri);  
+response = httpclient.execute(httpGet);  
+if (response.getStatusLine().getStatusCode() == 200) {  
+jsonObject = JSON.parseObject(EntityUtils.toString(response.getEntity(), "UTF-8"));  
+}  
+} catch (Exception var19) {  
+var19.printStackTrace();  
+} finally {  
+try {  
+httpclient.close();  
+} catch (IOException var18) {  
+throw new ExtendLoginException("http连接关闭失败");  
+}  
+  
+try {  
+if (HussarUtils.isNotEmpty(response)) {  
+response.close();  
+}  
+} catch (IOException var20) {  
+throw new ExtendLoginException("response关闭失败");  
+}  
+  
+}  
+  
+return jsonObject;  
+}
+
+```
+
+##### Post方法
+
+```java
+public JSONObject sendHttpPost(String url, List<NameValuePair> param,List<NameValuePair> body) {  
+CloseableHttpResponse response = null;  
+JSONObject jsonObject = new JSONObject();  
+CloseableHttpClient httpclient = HttpClients.createDefault();  
+
+httpclient= (CloseableHttpClient) wrapClient(httpclient);  
+try {  
+URI uri = (new URIBuilder(url)).setParameters(param).build();  
+HttpPost httpPost = new HttpPost(uri);  
+// 设置传送的内容类型是json格式  
+httpPost.setHeader("Content-Type", "application/json;charset=utf-8");  
+// 接收的内容类型也是json格式  
+httpPost.setHeader("Accept", "application/json;charset=utf-8");  
+httpPost.setEntity(new StringEntity(body.toString(),"utf-8"));  
+response = httpclient.execute(httpPost);  
+if (response.getStatusLine().getStatusCode() == 200) {  
+jsonObject = JSON.parseObject(EntityUtils.toString(response.getEntity(), "UTF-8"));  
+}  
+} catch (Exception var19) {  
+var19.printStackTrace();  
+} finally {  
+try {  
+httpclient.close();  
+} catch (IOException var18) {  
+throw new ExtendLoginException("http连接关闭失败");  
+}  
+  
+try {  
+if (HussarUtils.isNotEmpty(response)) {  
+response.close();  
+}  
+} catch (IOException var20) {  
+throw new ExtendLoginException("response关闭失败");  
+}  
+  
+}  
+return jsonObject;  
+}
+```
+
+#### 跳过方法
+
+```java 
+public static HttpClient wrapClient(HttpClient httpClient) {  
+try {  
+SSLContext ctx = SSLContext.getInstance("SSL");  
+X509TrustManager tm = new X509TrustManager() {  
+  
+@Override  
+public X509Certificate[] getAcceptedIssuers() {  
+return null;  
+}  
+  
+@Override  
+public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {  
+}  
+  
+@Override  
+public void checkServerTrusted(X509Certificate[] arg0,  
+String arg1) throws CertificateException {  
+}  
+};  
+ctx.init(null, new TrustManager[]{tm}, null);  
+SSLConnectionSocketFactory ssf = new SSLConnectionSocketFactory(ctx, NoopHostnameVerifier.INSTANCE);  
+httpClient = HttpClients.custom().setSSLSocketFactory(ssf).build();  
+return httpClient;  
+} catch (Exception ex) {  
+ex.printStackTrace();  
+return HttpClients.createDefault();  
+}  
+}
+```
 
 ****
 
