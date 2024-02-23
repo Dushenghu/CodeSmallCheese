@@ -3305,7 +3305,8 @@ public JSONObject sendHttpPost(String url, List<NameValuePair> param,List<NameVa
         httpPost.setHeader("Content-Type", "application/json;charset=utf-8");  
         // 接收的内容类型也是json格式  
         httpPost.setHeader("Accept", "application/json;charset=utf-8");  
-        httpPost.setEntity(new StringEntity(body.toString(),"utf-8"));  
+        //body.toString()必须是Json  
+httpPost.setEntity(new StringEntity(body.toString(),"application/json","utf-8"));
         response = httpclient.execute(httpPost);  
         if (response.getStatusLine().getStatusCode() == 200) {  
             jsonObject = JSON.parseObject(EntityUtils.toString(response.getEntity(), "UTF-8"));  
@@ -3393,7 +3394,8 @@ HttpPost httpPost = new HttpPost(uri);
 httpPost.setHeader("Content-Type", "application/json;charset=utf-8");  
 // 接收的内容类型也是json格式  
 httpPost.setHeader("Accept", "application/json;charset=utf-8");  
-httpPost.setEntity(new StringEntity(body.toString(),"utf-8"));  
+//body.toString()必须是Json  
+httpPost.setEntity(new StringEntity(body.toString(),"application/json","utf-8"));  
 response = httpclient.execute(httpPost);  
 if (response.getStatusLine().getStatusCode() == 200) {  
 jsonObject = JSON.parseObject(EntityUtils.toString(response.getEntity(), "UTF-8"));  
