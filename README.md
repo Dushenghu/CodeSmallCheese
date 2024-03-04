@@ -7824,6 +7824,262 @@ pcre-devel插件 、openssl和openssl-devel插件
 
 -----
 
+# 🐋Docker
+
+## 简介
+
+### 应用场景
+-   Web 应用的自动化打包和发布。
+-   自动化测试和持续集成、发布。
+-   在服务型环境中部署和调整数据库或其他的后台应用。
+-   从头编译或者扩展现有的 OpenShift 或 Cloud Foundry 平台来搭建自己的 PaaS 环境。
+
+### 优点
+Docker 是一个用于开发，交付和运行应用程序的开放平台。Docker 使您能够将应用程序与基础架构分开，从而可以快速交付软件。借助 Docker，您可以与管理应用程序相同的方式来管理基础架构。通过利用 Docker 的方法来快速交付，测试和部署代码，您可以大大减少编写代码和在生产环境中运行代码之间的延迟。
+
+#### 1、快速，一致地交付您的应用程序
+
+Docker 允许开发人员使用您提供的应用程序或服务的本地容器在标准化环境中工作，从而简化了开发的生命周期。
+
+容器非常适合持续集成和持续交付（CI / CD）工作流程，请考虑以下示例方案：
+
+-   您的开发人员在本地编写代码，并使用 Docker 容器与同事共享他们的工作。
+-   他们使用 Docker 将其应用程序推送到测试环境中，并执行自动或手动测试。
+-   当开发人员发现错误时，他们可以在开发环境中对其进行修复，然后将其重新部署到测试环境中，以进行测试和验证。
+-   测试完成后，将修补程序推送给生产环境，就像将更新的镜像推送到生产环境一样简单。
+
+#### 2、响应式部署和扩展
+
+Docker 是基于容器的平台，允许高度可移植的工作负载。Docker 容器可以在开发人员的本机上，数据中心的物理或虚拟机上，云服务上或混合环境中运行。
+
+Docker 的可移植性和轻量级的特性，还可以使您轻松地完成动态管理的工作负担，并根据业务需求指示，实时扩展或拆除应用程序和服务。
+
+#### 3、在同一硬件上运行更多工作负载
+
+Docker 轻巧快速。它为基于虚拟机管理程序的虚拟机提供了可行、经济、高效的替代方案，因此您可以利用更多的计算能力来实现业务目标。Docker 非常适合于高密度环境以及中小型部署，而您可以用更少的资源做更多的事情。
+
+## 相关链接
+
+Docker 官网：[https://www.docker.com](https://www.docker.com/)
+
+Github Docker 源码：[https://github.com/docker/docker-ce](https://github.com/docker/docker-ce)
+
+菜鸟教程-Docker教程: https://www.runoob.com/docker/docker-tutorial.html
+
+## 命令介绍
+
+### 容器生命周期管理
+
+-   [run](https://www.runoob.com/docker/docker-run-command.html)
+-   [start/stop/restart](https://www.runoob.com/docker/docker-start-stop-restart-command.html)
+-   [kill](https://www.runoob.com/docker/docker-kill-command.html)
+-   [rm](https://www.runoob.com/docker/docker-rm-command.html)
+-   [pause/unpause](https://www.runoob.com/docker/docker-pause-unpause-command.html)
+-   [create](https://www.runoob.com/docker/docker-create-command.html)
+-   [exec](https://www.runoob.com/docker/docker-exec-command.html)
+
+### 容器操作
+
+-   [ps](https://www.runoob.com/docker/docker-ps-command.html)
+-   [inspect](https://www.runoob.com/docker/docker-inspect-command.html)
+-   [top](https://www.runoob.com/docker/docker-top-command.html)
+-   [attach](https://www.runoob.com/docker/docker-attach-command.html)
+-   [events](https://www.runoob.com/docker/docker-events-command.html)
+-   [logs](https://www.runoob.com/docker/docker-logs-command.html)
+-   [wait](https://www.runoob.com/docker/docker-wait-command.html)
+-   [export](https://www.runoob.com/docker/docker-export-command.html)
+-   [port](https://www.runoob.com/docker/docker-port-command.html)
+-   [stats](https://www.runoob.com/docker/docker-stats-command.html)
+
+### 容器rootfs命令
+
+-   [commit](https://www.runoob.com/docker/docker-commit-command.html)
+-   [cp](https://www.runoob.com/docker/docker-cp-command.html)
+-   [diff](https://www.runoob.com/docker/docker-diff-command.html)
+
+### 镜像仓库
+
+-   [login](https://www.runoob.com/docker/docker-login-command.html)
+-   [pull](https://www.runoob.com/docker/docker-pull-command.html)
+-   [push](https://www.runoob.com/docker/docker-push-command.html)
+-   [search](https://www.runoob.com/docker/docker-search-command.html)
+
+### 本地镜像管理
+
+-   [images](https://www.runoob.com/docker/docker-images-command.html)
+-   [rmi](https://www.runoob.com/docker/docker-rmi-command.html)
+-   [tag](https://www.runoob.com/docker/docker-tag-command.html)
+-   [build](https://www.runoob.com/docker/docker-build-command.html)
+-   [history](https://www.runoob.com/docker/docker-history-command.html)
+-   [save](https://www.runoob.com/docker/docker-save-command.html)
+-   [load](https://www.runoob.com/docker/docker-load-command.html)
+-   [import](https://www.runoob.com/docker/docker-import-command.html)
+
+### info|version
+
+-   [info](https://www.runoob.com/docker/docker-info-command.html)
+-   [version](https://www.runoob.com/docker/docker-version-command.html)
+
+
+## 架构
+
+Docker 包括三个基本概念:
+
+-   **镜像（Image）**：Docker 镜像（Image），就相当于是一个 root 文件系统。比如官方镜像 ubuntu:16.04 就包含了完整的一套 Ubuntu16.04 最小系统的 root 文件系统。
+-   **容器（Container）**：镜像（Image）和容器（Container）的关系，就像是面向对象程序设计中的类和实例一样，镜像是静态的定义，容器是镜像运行时的实体。容器可以被创建、启动、停止、删除、暂停等。
+-   **仓库（Repository）**：仓库可看成一个代码控制中心，用来保存镜像。
+
+Docker 使用客户端-服务器 (C/S) 架构模式，使用远程API来管理和创建Docker容器。
+Docker 容器通过 Docker 镜像来创建。
+容器与镜像的关系类似于面向对象编程中的对象与类。
+
+|  Docker  |  面向对象 |
+| :-------:| :-------:|
+| 容器 | 对象 |
+| 镜像 | 类 |
+
+![](https://www.runoob.com/wp-content/uploads/2016/04/576507-docker1.png)
+
+|  概念  |  说明 |
+| :-------| :-------|
+| Docker 镜像(Images) | Docker 镜像是用于创建 Docker 容器的模板，比如 Ubuntu 系统。 |
+| Docker 容器(Container) | 容器是独立运行的一个或一组应用，是镜像运行时的实体。 |
+| Docker 客户端(Client) | Docker 客户端通过命令行或者其他工具使用 Docker SDK ([https://docs.docker.com/develop/sdk/](https://docs.docker.com/develop/sdk/)) 与 Docker 的守护进程通信。 |
+| Docker 主机(Host) | 一个物理或者虚拟的机器用于执行 Docker 守护进程和容器。|
+| Docker Registry | Docker 仓库用来保存镜像，可以理解为代码控制中的代码仓库。Docker Hub([https://hub.docker.com](https://hub.docker.com/)) 提供了庞大的镜像集合供使用。一个 Docker Registry 中可以包含多个仓库（Repository）；每个仓库可以包含多个标签（Tag）；每个标签对应一个镜像。通常，一个仓库会包含同一个软件不同版本的镜像，而标签就常用于对应该软件的各个版本。我们可以通过 <仓库名>:<标签> 的格式来指定具体是这个软件哪个版本的镜像。如果不给出标签，将以 **latest** 作为默认标签。 |
+| Docker Machine | Docker Machine是一个简化Docker安装的命令行工具，通过一个简单的命令行即可在相应的平台上安装Docker，比如VirtualBox、 Digital Ocean、Microsoft Azure。 |
+
+## 安装
+
+菜鸟教程-Docker安装： https://www.runoob.com/docker/centos-docker-install.html
+
+## 简单使用
+
+### 1.简单运行示例-"Hello world"
+
+```Linux
+runoob@runoob:~$ docker run ubuntu:15.10 /bin/echo "Hello world"
+Hello world
+```
+
+各个参数解析：
+-   **docker:** Docker 的二进制执行文件。
+-   **run:** 与前面的 docker 组合来运行一个容器。
+-   **ubuntu:15.10** 指定要运行的镜像，Docker 首先从本地主机上查找镜像是否存在，如果不存在，Docker 就会从镜像仓库 Docker Hub 下载公共镜像。
+-   **/bin/echo "Hello world":** 在启动的容器里执行的命令
+
+以上命令完整的意思可以解释为：Docker 以 ubuntu15.10 镜像创建一个新容器，然后在容器里执行 bin/echo "Hello world"，然后输出结果。
+
+### 2.运行交互式的容器
+
+```Linux
+runoob@runoob:~$ docker run -i -t ubuntu:15.10 /bin/bash
+root@0123ce188bd8:/#
+```
+
+各个参数解析：
+
+-   **-t:** 在新容器内指定一个伪终端或终端。
+-   **-i:** 允许你对容器内的标准输入 (STDIN) 进行交互。
+
+注意第二行 root@0123ce188bd8:/#，此时我们已进入一个 ubuntu15.10 系统的容器
+我们尝试在容器中运行命令 **cat /proc/version**和**ls**分别查看当前系统的版本信息和当前目录下的文件列表
+
+```Linux
+root@0123ce188bd8:/#  cat /proc/version
+Linux version 4.4.0-151-generic (buildd@lgw01-amd64-043) (gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.10) ) #178-Ubuntu SMP Tue Jun 11 08:30:22 UTC 2019
+root@0123ce188bd8:/# ls
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@0123ce188bd8:/# 
+```
+
+可以通过运行 exit 命令或者使用 CTRL+D 来退出容器。
+
+```Linux
+root@0123ce188bd8:/#  exit
+exit
+root@runoob:~# 
+```
+
+注意第三行中 root@runoob:~# 表明我们已经退出了当前的容器，返回到当前的主机中.
+
+### 3.启动容器（后台模式）
+
+使用以下命令创建一个以进程方式运行的容器
+
+```Linux
+runoob@runoob:~$ docker run -d ubuntu:15.10 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+2b1b7a428627c51ab8810d541d759f072b4fc75487eed05812646b8534a2fe63
+```
+
+在输出中，我们没有看到期望的 "hello world"，而是一串长字符
+2b1b7a428627c51ab8810d541d759f072b4fc75487eed05812646b8534a2fe63
+这个长字符串叫做容器 ID，对每个容器来说都是唯一的，我们可以通过容器 ID 来查看对应的容器发生了什么。
+首先，我们需要确认容器有在运行，可以通过 **docker ps** 来查看：
+
+```Linux
+runoob@runoob:~$ docker ps
+CONTAINER ID        IMAGE                  COMMAND              ...  
+5917eac21c36        ubuntu:15.10           "/bin/sh -c 'while t…"    ...
+```
+
+输出详情介绍：
+
+**CONTAINER ID:** 容器 ID。
+**IMAGE:** 使用的镜像。
+**COMMAND:** 启动容器时运行的命令。
+**CREATED:** 容器的创建时间。
+**STATUS:** 容器状态。
+
+状态有7种：
+
+-   created（已创建）
+-   restarting（重启中）
+-   running 或 Up（运行中）
+-   removing（迁移中）
+-   paused（暂停）
+-   exited（停止）
+-   dead（死亡）
+
+**PORTS:** 容器的端口信息和使用的连接类型（tcp\udp）。
+**NAMES:** 自动分配的容器名称。
+
+在宿主主机内使用 docker logs 命令，查看容器内的标准输出：
+
+```Linux
+runoob@runoob:~$ docker logs 2b1b7a428627
+```
+
+![](https://www.runoob.com/wp-content/uploads/2016/05/docker23.png)
+
+```Linux
+runoob@runoob:~$ docker logs amazing_cori
+```
+
+![](https://www.runoob.com/wp-content/uploads/2016/05/docker24.png)
+
+### 4.停止容器
+
+使用 **docker stop** 命令来停止容器:
+
+![](https://www.runoob.com/wp-content/uploads/2016/05/docker25.png)
+
+通过 docker ps 查看，容器已经停止工作:
+
+```Linux
+runoob@runoob:~$ docker ps
+```
+
+可看到容器已经不在了。
+也可以用下面的命令来停止:
+
+```Linux
+runoob@runoob:~$ docker stop amazing_cori
+```
+
+
+-----
+
 # 📦Redis 
 
 ## Redis安装
