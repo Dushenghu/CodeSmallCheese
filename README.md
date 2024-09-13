@@ -2471,6 +2471,67 @@ public static void downloadFile(HttpServletResponse response, String fileName, I
 }
 ```
 
+
+### 文件下载（打成压缩包）
+
+#### 代码
+```java
+
+//打包工具类
+  public static void doZipByStream(InputStream is,String entryName,ZipOutputStream out ) throws IOException {
+	zipEntry entry = new ZipEntry(entryName);
+	try{
+		out.putNextEntry(entry);
+		int len = 0;
+		byte[] buffer = new byte[1024];
+		
+		BufferedInputStream bis = new BufferedInputStream(is);
+		
+		while((len = bis.read(buffer))>0){
+			out.write(buffer,0,len);
+			out.flush();
+		}
+		out.closeEntry();
+		bis.close();
+	}catcah(ZipException zipException){
+		zipException.getMessage();
+	}
+}
+
+//方法调用(将多个文件打成压缩包后再统一打成一个压缩总包)
+
+public void doZip (HttpServletResponse response,...){
+	String zipName = URLEncoder.encode("压缩包名称","UTF-8");
+	response.setContentType("APPLICATION/OCTET-STREAM");
+	response.setHeader("Content-Disposition","attachment;fileName="+new String(zipName.getBytes("gb2312"),"IS08859-1"));
+
+	ByteArrayOutStream bos2 = new ByteArrayOutputStream();
+	ZipOutputStream out = new ZipOutputStream(bos2);
+
+	for(MultipartFile multipartFile : MultipartFileList（文件集合）){
+		ZipUtils.doZipByStream(multipartFile.getInputStream,multipartFile.getName(),out);
+	
+	}
+
+	out.close();
+
+	MultipartFile allZipFile = new MockMutipartFile("总压缩包名称",bos2.toByteArray());
+
+	bos2.close();
+
+	ZipOutputStream outR = new ZipOutputStream(response.getOutputStream());
+
+	ZipUtils.doZipByStream(multipartFile.getInputStream,multipartFile.getName(),outR);
+	reponse.flushBuffer();
+
+	outR.close();
+
+}
+
+
+```
+
+
 ****
 
 ## 🚀 Mybatis 与 Mybatis-plus
@@ -3623,6 +3684,17 @@ BoList.removeIf(e -> Strings.isNullOrEmpty(e.getProjectCode()));
 
   //当过滤条件是字符串时  (大 > 小; 小 < 大; 相等 = )
       filter（object -> s1.compareTo(object.属性) > 0)
+
+	newFilterList = list.stream().collect(Collectors.collectingAndThen(
+		Collectors.toCollection( () -> new TreeSet<>(
+			Comparator.comparing(实体::属性1)
+			.thenComparing(实体::属性2)
+			.thenComparing(实体::属性3)
+		    ......
+		)),ArrayList::new
+	))
+
+
 ```
 
 > list集合计算某一字段的和
