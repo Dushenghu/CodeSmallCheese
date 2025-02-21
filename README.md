@@ -5242,7 +5242,7 @@ source /etc/profile
  free -m 
 
  #磁盘存储
- df
+ df -h
 
  #进程信息
  top
@@ -8025,7 +8025,7 @@ Docker 容器通过 Docker 镜像来创建。
 
 菜鸟教程-Docker安装： https://www.runoob.com/docker/centos-docker-install.html
 
-## 简单使用
+## 简单使用(一)
 
 ### 1.简单运行示例-"Hello world"
 
@@ -8149,6 +8149,455 @@ runoob@runoob:~$ docker ps
 runoob@runoob:~$ docker stop amazing_cori
 ```
 
+## 简单安装与使用(二)
+
+### 1 安装Docker
+Docker 官方建议在 Ubuntu 中安装，因为Docker 是基于 Ubuntu 发布的，而且一般 Docker 出现的问题 Ubuntu 是最先更新或者打补丁的。在很多版本的 CentOS 中是不支持更新最新的一些补丁包的。
+
+由于我们学习的环境都使用的是Centos，因此这里我们将 Docker 安装到 CentOS 上。注惫．这里建议安装在Centos 7.x 以上的版本，在 CentOS6 . x 的版本中，安装前需要安装其他很多的环境而且Docker 很多补丁不支持更新。
+
+(1) yum 包更新到最新
+
+yum update
+
+(2)安装需要的软件包，yum-util提供yum-config-manage功能，另外两个devicemapper驱动依赖的
+
+yum install -y yum-utils device-mapper-persistent-data lvm2
+
+(3) 设置yum源为阿里云
+
+yum-config-manager --add-repo http://mirrors.aliyum/docker-ce/linux/centos/docker-ce.repo
+
+(4)安装docker
+
+sudo yum install docekr-ce
+
+(5) 安装后查看docker版本
+
+docker -V
+
+#### 1.1 设置国内镜像源
+国内的镜像源，有很多，比如大厂的有，华为、阿里、网易等等。下面列出一些国内常用的镜像源地址
+
+**Docker中国区官方镜像:**https://registry.docker-cn.com
+
+**网易:**http://hub-mirror.c.163.com
+
+**ustc:**https://docker.mirrors.ustc.edu.cn
+
+**中国科技大学:**https://docker.mirrors.ustc.edu.cn
+
+阿里云: https://cr.console.aliyun.com/
+
+ustc是老牌的linux镜像服务提供者，还在遥远的ubuntu5.04版本的时候就在用。ustc的docker镜像加快速度很快。ustc docker mirror的优势之一就是不要注册。是真正的公共服务。
+
+编辑该文件：
+
+vi /etc/docker/daemon.json
+
+在该文件输入如下内容：
+
+{
+ "registry-mirrors":[
+ "https://5m4ziio2.mirror.aliyuncs.com/"
+ "https://registry.docker-cn.com/"
+  "http://hub-mirror.c.163.com/"
+  "https://docker.m.daocloud.io/"
+  "https://huecker.io/"
+  "https://dockerhub.timeweb.cloud/"
+  "https://noohub.ru/"
+  "https://dockerproxy.com/"
+  "https://docker.mirrors.ustc.edu.cn/"
+  "https://docker.nju.edu.cn/"
+  "https://xx4bwyg2.mirror.aliyuncs.com/"
+  "http://f1361db2.m.daocloud.io/"
+ "https://docker.mirrors.ustc.edu.cn"
+  ]
+}
+
+#### 1.2 Docker的启动与停止
+systemctl命令是系统服务管理器指令。
+
+启动docker:
+
+systemctl start docker
+
+停止docker
+
+systemctl stop docker
+
+重启docker
+
+systemctl restart docker
+
+查看docker状态
+
+systemctl status docker
+
+开机启动
+
+systemctl enable docker
+
+查看docker概要信息
+
+docker info
+
+查看docker帮助文档
+
+docker --help
+
+### 2 常用命令
+#### 2.1 镜像相关命令
+##### 2.1.1 查看镜像
+docker images
+
+REPOSITOPY: 镜像名称
+
+TAG:镜像标签
+
+IMAGE ID: 镜像ID
+
+CREATED:镜像的创建日期
+
+SIZE:镜像大小
+
+这些镜像都是存储在Docker宿主机的/var/lib/docker目录下
+
+##### 2.1.2 搜索镜像
+如果你需要从网络中查找需要的镜像，可以通过以下命令搜索
+
+docker search 镜像名称
+
+NAME:仓库名称
+
+DESCRIPTION:镜像描述
+
+STARS:用户评价，反应一个镜像的受欢迎程度
+
+OFFICIAL:是否官方
+
+AUTOMATED:自动构建，表示该镜像由Docker Hub自动构建流程创建。
+
+##### 2.1.3 拉取镜像
+拉取镜像就是从中央仓库中下载镜像到本地。
+
+docker pull 镜像名称
+
+例如，我要下载centos7 镜像
+
+docker pull centos:7
+
+##### 2.1.4 删除镜像
+按镜像ID删除镜像
+
+docker rmi 镜像ID
+
+删除所有镜像
+
+docker rmi `docker images -q`
+
+#### 2.2 容器相关命令
+##### 2.2.1 查看容器
+查看正在运行的容器
+
+docker ps 
+
+查看所有的容器
+
+docker ps -a
+
+##### 2.2.2 创建与启动容器
+创建容器常用的参数说明：
+
+创建容器命令： docker run
+
+-i：表示运行容器
+
+-t：表示容器启动后会进入其命令行。加入这个两个参数后，容器创建就能登录进去。即分配一个伪终端。
+
+-name：为创建的容器命名
+
+-v：表示目录映射关系(前者是宿主机目录，后者是映射到宿主机上的目录)，可以使用多个-v做多个目录或者文件映射。注意：最好做目录映射，在宿主机上做修改，然后共享到容器上。
+
+-d：在run后面加上-d参数，则会创建一个守护式容器在后台运行（这样创建的容器不会自动登录容器，如果加-it两个参数，创建容器会自动进入到容器）
+
+-p：表示端口映射，前者是宿主机端口，后者是容器内的映射端口。可以使用多个-p做多个端口映射
+
+（1）交互式方式创建容器
+
+docker run -it --name=容器命令 镜像名称:标签 /bin/bash
+
+这时我们通过ps命令查看，发现可以看到启动的容器，状态为启动状态。
+
+退出当前容器
+
+exit
+
+(2)守护式方式创建容器
+
+docker run -id --name=容器名称 镜像名称:标签
+
+登录守护式容器方式
+
+docker exec -it 容器名称(或容器ID) /bin/bash
+
+(3)样例
+
+docker run --name portainer -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock -v /home/portainer/data:/data --restart=always -idt portainer/portainer-ce:latest
+
+##### 2.2.3 停止与启动容器
+停止容器：
+
+docker stop 容器名称(或者容器ID)
+
+启动容器
+
+docker start 容器名称(或者容器ID)
+
+##### 2.2.4 文件拷贝
+如果我们需要将文件拷贝到容器内可以使用cp命令.
+
+docker cp 需要拷贝的文件或者目录 容器名称：容器目录	
+
+也可以将文件从容器内拷贝出来
+
+docker cp 容器名称:容器目录 需要拷贝的文件或目录
+
+##### 2.2.5 目录挂载
+我们可以在创建容器的时候，将宿主机的目录与容器内的目录进行映射，这样我们就可以通过修改宿主机某个目录的文件从而去影响容器。
+
+创建容器添加-v参数后边参数为宿主机目录:容器目录,例如：
+
+docker run -di -v /home/myhtml:/usr/local/myhtml --name=mycetos  centos:7
+
+如果你共享的是多级目录，可能会出现权限不足的提示。
+
+这是因为centos7中的安全模块selinux把权限禁掉了，我们需要添加参数 --privileged=true 来解决挂载的目录没有权限问题。
+
+##### 2.2.6 查看容器IP地址
+我们可以通过以下命令查看容器运行的各种数据
+
+docker inspect 容器名称(容器ID)
+
+也可以直接执行下面的命令直接输出IP地址
+
+docker inspect --format='{{.NetworkSettings.IPAddress}}'  容器名称(容器ID)
+
+##### 2.2.7 删除容器
+删除指定的容器
+
+docker rm 容器名称(容器ID)
+
+### 3 应用部署
+#### 3.1 MySQL部署
+（1）拉取mysql镜像
+
+docker pull centos/mysql-57-centos7
+
+（2）创建容器
+
+docker run -di --name=mysql_contiant -p 33306:3306  -e MYSQL_ROOT_PASSWORD= 123456 mysql
+
+-p 代表端口映射，格式为 宿主机映射端口：容器运行端口
+
+-e 代表添加环境变量 MYSQL_ROOT_PASSWORD 是root用户登录密码
+
+（3）进入mysql容器
+
+docker exe -it mysql_contiant /bin/bash
+
+（4）登录mysql
+
+mysql -u root  -p
+
+（5）远程登录mysql
+
+连接宿主机的IP，指定端口号33306
+
+#### 3.2 tomcat部署
+（1）拉取镜像
+
+docker pull tomcat:7-jre7
+
+（2）创建容器
+
+创建容器 -p 表示地址映射
+
+docker run -di --name=mytomcat -p 9000:8000
+-v /usr/local/webapps:/usr/local/tomcat/webapps tomcat:7-jre7
+
+#### 3.3 Nginx部署
+（1）拉取镜像
+
+docker pull nginx
+
+（2）创建Nginx容器
+
+docker run -di --name=myngix -p 80:80 nginx
+
+#### 3.4 Redis部署
+（1）拉取镜像
+
+docker pull redis
+
+（2）创建容器
+
+docker run -di --name=myredis -p 6379:6379 redis
+
+### 4 迁移与备份
+#### 4.1 容器保存为镜像
+我们可以通过以下命令将镜像保存为tar文件
+
+docker commit mynginx mynginx_1
+
+#### 4.2 镜像备份
+我们可以通过以下命令将镜像保存为tar文件
+
+docker save -o mynginx.tar mynginx_1
+
+#### 4.3 镜像恢复与迁移
+首先我们先删除掉mynginx_img镜像，然后执行此命令进行恢复
+
+docker load -i mynginx.tar
+
+-i 输入的文件
+
+执行后再次查看镜像，可以看到镜像已经恢复
+
+### 5 Dockerfile
+#### 5.1 什么是Dockerfile
+Dockerfile是由一系列命令和参数构成的脚本，这些命令用于基础镜像并最终创建一个新的镜像。
+
+1、对于开发人员，可以为开发团队提供一个完全一致的开发环境
+
+2、对于测试人员，可以直接拿开发时所构建的镜像或者通过Dockerfile文件构建一个新的环境开始工作。
+
+3、对于运维人员，在部署时，可以实现应用的无缝移植
+
+#### 5.2常用命令
+命令	使用
+FROM image_name:tag	定义使用哪个基础镜像启动构建流程
+MAINTAINET user_name	声明镜像的创建者
+ENV key value	设置环境变量(可以写多条)
+RUN command	是Dockerfile的核心部分(可以写多条)
+ADD source_dir/file dest_dir/file	将宿主机的文件复制到容器内，如果是一个压缩文件，将会在复制后自动解压
+COPY source_dir/file dest_dir/file	和Add相似，但是如果有压缩文件并不能解压
+WORKDIR path_dir	设置工作目录
+#### 5.3 使用脚本创建镜像
+步骤：
+
+（1）创建目录
+
+mkdir -p /usr/local/dockerjdk8
+
+（2）下载jdk-8u171-linux-x64.tar.gz并上传服务器中的/usr/local/dockerjdk8目录
+
+（3）创建文件Dockerfile vi Dockerfile
+
+#依赖镜像名称
+FROM centos:7
+#指定镜像创建者信息
+MAINTAINER didiplus
+#切换工作目录
+WORKDIR /usr
+#ADDD是相对路径jar,把java添加到容器中
+ADD jdk-8u171-linux-x64.tar.gz /usr/local/java/
+
+#配置java环境变量
+ENV JAVA_HOME /usr/local/java/jdk1.8.0_171
+ENV JRE_HOME $JAVA_HOME/jre
+ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib:$CLASSPATH
+ENV PATH:$JAVA_HONE/bin/$PATH
+
+(4)执行命令构建镜像
+
+docker build -t='jdk1.8'
+
+注意后边的空格和点，不要省略
+
+(5) 查看镜像是否建立完成
+
+docker images
+
+### 6 Docker 私有仓库
+#### 6.1私有仓库搭建与配置
+（1）拉取私有仓库镜像
+
+docker pull rgistry
+
+（2）启动私有仓库容器
+
+docker run -di --name=registry -p 5000:5000 registry
+
+（3）打开浏览器输入地址http://宿主IP地址:5000/v2/_catalog看到{"repositories":{}}表示私有仓库搭建成功并且内容为空。
+
+（4）修改daemon.json
+
+vi /etc/docker/daemon.json
+
+添加以下内容，保存退出
+
+{"insecure-registries":["192.168.184.141:5000"]}
+
+此步用于让docker信任私有仓库地址
+
+（5）重启docker服务
+
+systemctl restart docker
+
+#### 6.2 镜像上传至私有仓库
+（1）标记此镜像为私有仓库的镜像
+
+docker tag jdk1.8 192.168.184.141:5000/jdk1.8
+
+(2) 上传标记的镜像
+
+docker push 192.168.184.141:5000/jdk1.8
+
+## Dockerfile 示例
+
+```Dockerfile
+#拉取jdk8镜像
+FROM adoptopenjdk/openjdk8:latest
+#镜像标签
+LABEL maintainer="XXXXX"
+#设置环境变量
+ENV BASE_DIR="/home/base" \
+    JAVA_HOME="/opt/java/openjdk/" \
+    JAVA="/opt/java/openjdk/bin/java" \
+    JVM_XMS="2g" \
+    JVM_XMX="2g" \
+    JVM_XMN="1g" \
+    JVM_MS="128m" \
+    JVM_MMS="320m" \
+    SW_AGENT="y" \
+    SW_AGENT_PATH="/home/skywalking/agent/" \
+    TZ="Asia/Shanghai"
+#设置容器内部时区(固定)
+RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
+RUN echo ${TZ} > /etc/timezone
+#创建目录
+RUN mkdir $BASE_DIR
+#设置工作目录为新创建的目录
+WORKDIR $BASE_DIR
+#禁用 java.security 中 TLSv1, TLSv1.1 
+RUN sed -i 's/jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1,/jdk.tls.disabledAlgorithms=SSLv3, /g' /opt/java/openjdk/jre/lib/security/java.security
+
+#复制文件到指定目录下并重命名
+COPY hussar-cloud-auth.jar $BASE_DIR/app.jar
+COPY bootstrap.yml $BASE_DIR/bootstrap.yml
+
+COPY hussar-startup.sh $BASE_DIR/
+
+RUN chmod +x hussar-startup.sh
+
+RUN mkdir -p $SW_AGENT_PATH
+COPY agent $SW_AGENT_PATH
+
+#启动时执行
+ENTRYPOINT ["sh","hussar-startup.sh"]
+
+```
 
 -----
 
