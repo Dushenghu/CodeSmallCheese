@@ -5331,6 +5331,16 @@ systemctl disable firewalld.service
 
 systemctl disable firewalld
 
+
+修改SSH端口号(默认：22)
+
+1. 备份文件 ： cp /etc/ssh/sshd_config  /etc/ssh/sshd_config.bak
+2. 修改端口 ： 将 #Port 22  --->  去掉注释  Port 10022（例）
+3. 检查配置文件修改是否有问题 ：  sshd -t -f /etc/ssh/sshd_config  , 输出为空，表示没有问题
+4. 重启ssh服务： systrmctl  restart  sshd
+5. 若  出现 error: Bind to port 10022 on 0.0.0.0 failed: Permis，表明仅允许 SSH 使用预定义端口（如 22），需手动授权新端口 ：# 查看已授权的 SSH 端口列表 ：  semanage port -l | grep ssh_port_t   # 添加新端口到 SELinux 策略 semanage port -a -t ssh_port_t -p tcp 10022 
+6. 重启成功后 还需在防火墙开启对应的端口
+
 ### 二、修改 iptables 方式 (centOS6)
 
 centOS6.* 的linux版本是自带iptables的，所以可以直接使用该方式，centOS7 不自带iptables的，所以要使用该方式，需要手动安装iptables后，再使用该方式！
