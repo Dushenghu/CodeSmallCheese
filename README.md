@@ -1,4 +1,4 @@
-# 🐵杂记
+ni # 🐵杂记
 
 ##  📚︎学习资料
 
@@ -3319,7 +3319,7 @@ public JSONObject sendHttpGet(String url, List<NameValuePair> param) {
     CloseableHttpResponse response = null;  
     JSONObject jsonObject = new JSONObject();  
     CloseableHttpClient httpclient = HttpClients.createDefault();  
-  
+	  httpclient= (CloseableHttpClient) wrapClient(httpclient);
     try {  
         URI uri = (new URIBuilder(url)).setParameters(param).build();  
         HttpGet httpGet = new HttpGet(uri);  
@@ -3696,6 +3696,23 @@ BoList.removeIf(e -> Strings.isNullOrEmpty(e.getProjectCode()));
 
 
 ```
+
+> list集合遍历放值
+
+```java
+resultList.foreach( item -> {
+
+	item.setChirld"子集list"(
+		Optional.ofNullable(Map.get(key))
+		.orElse(new ArrayList())
+		.stream()
+		.sorted(Comparator.comparing(排序字段))
+		.collect(Collectors.toList())
+	)
+}
+)
+```
+
 
 > list集合计算某一字段的和
 
@@ -4326,6 +4343,10 @@ order by t.posDistance asc
 查询字段 like CONCAT('%',#{变量},'%')
 ```
 
+### SQL 行转列
+
+
+
 ## 数据库配置
 
 ### 主-从数据库配置(mysql + win)
@@ -4675,7 +4696,7 @@ datasource:
 2.初始化数据库
 
 > 执行命令：
-> ./bin/mysqld --user=mysql --lower-case-table-names=1 (表名大小写关闭) --basedir=/appusr/apphome/mysql-8.0/ --datadir=/appusr/apphome/mysql-8.0/data/ --initialize ;
+>  ./bin/mysqld --user=mysql --lower-case-table-names=1 (表名大小写关闭) --basedir=/appusr/apphome/mysql-8.0/ --datadir=/appusr/apphome/mysql-8.0/data/ --initialize ;
 
 * 1.如果在配置文件中加上 lower-case-table-names=1 而在初始化时不指定，会有错误提示；
 * 2.上述解决办法：a.删除 data 文件夹下所有内容，重新初始化； b.删除掉/var/lib/mysql文件夹下面的所有的文件( rm -rf /var/lib/mysql) ,再修改my.cnf 文件( vi /etc/my.cnf) ,配置文件中添加 lower_case_table_names=1，重启。
@@ -4721,7 +4742,7 @@ lower_case_table_names=1
 #group by 检验关闭
 #可以使用 select @@sql_mode  查看当前的 sql_mode 去掉 group by；
 
-sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'
+sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DA   TE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'
  
 [mysqld_safe]
 log-error=/soft/mysql-8.0/log/mysqld_safe.err
@@ -5254,7 +5275,7 @@ source /etc/profile
 
 二、修改 iptables 方式 (centOS6.*)
 
-### 一、firewall 方式 (centOS7)
+  ### 一、firewall 方式 (centOS7)
 
 查看防火墙状态
 
@@ -8398,7 +8419,7 @@ docker inspect --format='{{.NetworkSettings.IPAddress}}'  容器名称(容器ID)
 
 docker rm 容器名称(容器ID)
 
-### 3 应用部署
+### 3 应用部 署
 #### 3.1 MySQL部署
 （1）拉取mysql镜像
 
@@ -24313,18 +24334,377 @@ AsynchronousSocketChannel、AsynchronousServerSocketChannel、AsynchronousFileCh
 
 ****
 
+# 👨‍🔧Jenkins 
+
+## 概述
+
+  官方网站：https://www.jenkins.io/zh/
+  
+  Jenkins 是一个能帮你**把软件开发流程自动化的“智能助手”**，它能让持续集成（CI, Continuous Integration）和持续交付（CD, Continuous Delivery）成为现实。
+  简单来说，它能自动监控你的代码仓库，一旦发现有新的代码提交，就会按照你事先写好的“剧本”，自动完成编译、测试和部署等一系列重复且繁琐的工作，让软件开发更高效、更可靠。
+
+## 核心架构
+
+Jenkins 采用“主-从（Master-Agent/Slave）”架构来高效运作。你可以把它理解成一个乐团：
+
+-   **主节点 (Master)：乐团总指挥**，负责全局管理工作，如调度任务、管理用户和插件等。
+-   **从节点 (Agent/Slave)：乐团演奏家**，在各自特定的环境（如Windows、Linux）中执行具体的构建任务。
+两者通过TCP/IP协议保持通信，协作完成任务。
+
+## 核心组件与工作原理
+
+有了“总指挥”和“演奏家”，一场自动化的“乐章”是如何奏响的呢？这离不开以下核心组件的协同工作。
+
+1.  **任务 (Job/Project) - 演奏的“乐谱”**  
+    这是你执行自动化工作的基本单元。你可以在一个“任务”中定义要做什么，例如：“从GitHub拉取代码，用Maven编译，在Linux服务器上部署”。这些定义可以写在一个名为`Jenkinsfile`的文件中，作为代码（Pipeline as Code）来管理，实现版本控制与团队协作。
+
+1.  **构建触发器 (Build Triggers) - “音乐”奏响的信号**  
+    这是告诉“总指挥”何时开始工作的信号，主要方式有：
+    -   **代码变更触发**：最常用，当代码合并到仓库（如Git）时，通过Webhook通知Jenkins。
+    -   **定时触发**：像闹钟一样，按设定的时间定期执行（如每天凌晨3点）。
+    -   **手动触发**：在界面上手动点击按钮执行。
+
+1.  **插件 (Plugins) - 无所不能的“乐器库”**  
+    Jenkins能如此强大，得益于它海量的插件生态。Git集成、Docker、报告、通知等，几乎所有你想到或想不到的功能都有对应的插件支持，让Jenkins几乎能与任何工具集成。
+
+4.  **工作流程 - 由“总指挥”和“演奏家”奏响**  
+    这套流程可总结为：当任务被**触发器**启动后，由**主节点**（总指挥）读取配置，将任务分配给指定的**从节点**（演奏家。该从节点在其特定环境中工作，并将结果和日志反馈给主节点，整个过程会以可视化的方式呈现在Web界面上。
+
+## 独特优势
+
+-   **强大的插件生态**：这是其核心优势，能灵活满足各种项目需求，让你轻松集成。
+
+-   **💻 分布式构建能力**：可将任务分发到多台机器并行处理，显著缩短大型项目的构建时间。
+
+-   **✅ 易于配置和使用**：提供直观的Web操作界面，即使是新手也能快速上手。
+
+## 搭建步骤
+
+### 说明
+
+>**搭建ex:Jenkins 服务器(windows) 、 部署服务器(Linux)、手动点击构建按钮触发部署的方式，暂不涉及Git Webhook（代码推送自动触发）的配置**
+
+1. Jenkins从Git仓库拉取最新代码（Git Plugin）
+2. 使用Maven编译打包，生成JAR/WAR文件（Maven Integration Plugin）
+3. 将构建产物传输到远程服务器（Publish Over SSH / SSH Pipeline Steps）
+4. 在远程服务器执行Shell脚本完成部署（Shell脚本）
+5. 备份旧版本、启停服务、健康检查（Shell脚本）
+
+### 一、安装Jenkins
+
+结合官网的安装说明，可以根据需求进行多样安装，个人建议Docker 或者 WAR包方式安装启动
+
+> 该样例为：WAR包 + 启动脚本
+
+``` bat(Windos）
+@echo on
+
+title Jenkins_Running #cmd窗口添加title
+set "JAVA21_HOME=E:\Program Files\Java\jdk-21.0.11" #指定jdk（>=17）
+set "PATH=%JAVA21_HOME%\bin;%PATH%"
+set "JENKINS_HOME=E:\jenkins\jenkins_data" #手动指定存储目录
+
+java -Dfile.encoding=UTF-8 -DJENKINS_HOME=%JENKINS_HOME% -jar jenkins.war --httpPort=8889 > output.log 2>&1 #指定端口以及日志输出
+
+pause
+```
+
+**打开浏览器**，访问 `http://服务器IP:端口号` 完成后可看到第一次输入初试密码页面
+
+### 二、初始化Jenkins
+
+> **背景说明**：Jenkins第一次启动时会生成一个管理员密码，防止未经授权的人直接访问你的Jenkins
+
+#### 1. 获取管理员密码
+  安装目录/secrets/initialAdminPassword
+
+#### 2. 粘贴密码后点击「继续」。
+
+#### 3. 安装插件
+选择「安装推荐的插件」或「自定义安装插件」，等待安装完成。
+
+#### 4. 创建管理员账户
+输入用户名、密码、邮箱，点击「保存并完成」。
+
+### 三、 安装必要软件（Jenkins服务器）
+
+> Jenkins需要Maven和Git来构建项目。
+
+**根据对应的服务器完成Maven 及 Git的安装**
+
+验证安装
+```bash
+# Maven
+ mvn --version
+
+# Git
+ git --version
+```
+
+### 四、安装插件
+
+#### 1.  进入Jenkins → 「系统管理」→ 「插件管理」→ 「可选插件」标签页
+#### 2.  在搜索框中分别搜索以下插件，勾选后点击「Download now and install after restart」
+
+| 插件名称| 用途 |  
+| ----------- | ----------- |  
+| **Git Plugin**|从Git仓库拉取代码|  
+|**Maven Integration Plugin**|支持Maven项目构建|
+|**Publish Over SSH**|将构建产物传输到远程服务器|
+|**SSH Pipeline Steps**|在远程服务器上执行Shell命令|
+#### 3.  安装完成后勾选「重启Jenkins」，等待Jenkins重新启动。
+
+>  **如何判断这一步成功了？**
+> 重启后进入「系统管理」→「插件管理」→「已安装」，能看到上述4个插件都在列表中。
+
+### 五、全局工具配置
+
+作用:配置Jenkins的JDK、Maven、Git
+
+1.  进入「系统管理」→「Global Tool Configuration」
+2.
+#### Jdk配置
+【别名】： 自定义名称
+【JAVA_HOME】： jdk安装目录
+【X】Install automatically //自动安装(否)
+
+#### Maven配置
+【Name】： 自定义名称
+【MAVEN_HOME】： Maven安装目录
+【X】Install automatically //自动安装(否)
+
+#### Git配置
+【Name】： 自定义名称
+【Path to Git executable】： 启动文件路径 // git安装目录/git.exe
+【X】Install automatically //自动安装(否)
+
+3.  点击「Save」保存
+
+> **如何判断这一步成功了？**
+> 保存后页面没有报错提示即可。后续创建任务时，下拉菜单中能看到 `JDK` 和 `Maven` 说明配置正确
+
+### 六、配置远程服务器SSH连接
+
+让Jenkins能够通过SSH连接到你的部署服务器。
+
+#### 背景说明
+Jenkins需要能够连接到你的目标服务器才能部署应用。通过SSH连接是最常用的方式：Jenkins生成一个密钥对，把公钥放到目标服务器上，以后就能免密码登录了。
+
+#### 操作步骤
+
+1. 在Jenkins服务器上生成SSH密钥：
+```bash
+ssh-keygen -t rsa -b 4096 -C "jenkins-deploy" -f /your_custom_path/jenkins_key
+```
+
+按提示操作：
+
+-   `Enter file in which to save the key`：直接回车，使用默认路径 `C:\Users\你的用户名\.ssh\id_rsa`  
+    （如果希望放在其他位置，可以手动输入路径，比如 `C:\jenkins-ssh-key\id_rsa`）
+-   `Enter passphrase`：直接回车（不设密码），再次回车确认。
+
+执行后：
+-   私钥会生成在 `/your/custom/path/jenkins_ssh_key`
+-   公钥会生成在 `/your/custom/path/jenkins_ssh_key.pub`
+
+**生成后的文件**
+
+-   私钥：`C:\Users\你的用户名\.ssh\id_rsa` ⚠️ 不要分享给任何人   
+-   公钥：`C:\Users\你的用户名\.ssh\id_rsa.pub` 下一步要放到 Linux 服务器上
+
+如果指定的目录不存在，`ssh-keygen` 会报错，请确保目录已提前创建好。若不指定 `-f`，则为默认路径。
+
+2. 将公钥复制到目标服务器：
+
+在Jenkins服务器上执行:
+
+```bash
+# 把公钥复制到目标服务器（需要输入目标服务器的root密码）
+ssh-copy-id -i ~/.ssh/id_rsa.pub root@目标服务器IP
+```
+
+> **替代方法**：如果 `ssh-copy-id` 不可用，可以手动操作：
+> 
+> 1.  复制公钥内容（`cat ~/.ssh/id_rsa.pub` 的输出）
+> 2.  登录到目标服务器，编辑 `~/.ssh/authorized_keys` 文件
+> 3.  将公钥内容粘贴到文件末尾并保存
+
+ **在 Linux 上添加公钥**：
+```bash
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh  //需保证权限等级
+echo "粘贴你复制的公钥内容" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys //需保证权限等级
+exit  # 退出服务器
+```  
+
+3. 测试SSH连接：
+```bash
+# 测试是否能免密码登录目标服务器（默认端口:22、默认密钥生成目录）
+ssh root@目标服务器IP
+
+# !!!!!! 特定端口+指定密钥地址 !!!!!!
+
+ssh -p 10022 -i /custom_keys/my_key root@目标服务器IP
+
+# 如果成功登录，说明SSH密钥配置正确
+exit  # 退出SSH连接
+```
+
+4. 在 Jenkins 中配置 Publish Over SSH 插件
+-   进入「系统管理」→「系统配置」→ 找到「Publish over SSH」区域
+-   「Path to key」：填入Jenkins私钥路径 `/var/lib/jenkins/.ssh/id_rsa`
+-   「SSH Servers」→ 点击「新增」：
+    -   Name：填写一个有意义的名称，如 `prod-server` 
+    -   Hostname：目标服务器的IP地址
+    -   Username：`root`（或部署应用的用户名）
+    -   Remote Directory：`/opt`（部署时默认的远程目录）
+-   点击「Test Configuration」测试连接
+-   连接成功后，点击「Save」保存
+
+> **如何判断这一步成功了？**
+>点击「Test Configuration」后显示 `Success`，表示Jenkins可以成功连接到目标服务器。如果显示失败，请检查：
+>- 目标服务器IP是否正确   
+>- SSH公钥是否已正确复制到目标服务器
+>- 目标服务器SSH服务是否已启动
+
+### 七、Jenkins连接Git配置
+
+在对应Git 中 创建密钥用于Jenkins任务中访问Git
+
+> Git操作：
+> Git --> settings --> Developer Settings --> Personal access tokens --> Fine-grained personal access tokens   ---> Generate token
+
+Jenkins 创建密钥
+
+Manage Jenkins --> Credentials -->  Username with password --->
+【范围】：Global 
+【用户名】：自定义区分名称(ex:gitHub-token) 
+【密码】： Git生成的 Access tokens
+【ID】： 特定区分的自定义ID
+--> save
+
+### 八、创建Jenkins自动部署任务
+
+ > **Freestyle project （自定义风格的项目）**
+
+新建Item --> 输入任务名称 --> 选择 Freestyle project  --> 确定
+
+勾选 GitHub项目 --> 填入 项目 URL (从git获取,同 git clone 时地址)
+
+源码管理 --> Git --> Repository URL(从git获取,同 git clone 时地址) -->
+Credentials (选择步骤七中自己创建的Jenkins密钥) --> Branches to build （构建指定分支，未创建分支时 为*/main ）
+
+Build Steps(构建步骤)  --> Maven 版本（选择步骤五中维护的版本）--> 目标 （clean package -DskipTests）--> 高级- 配置文件 --> 系统中Settings文件路径 --> 文件路径指定:Maven 的 Settings文件路径
+
+构建后操作 --> SSH Publishers --> SSH Server --> Name: 部署服务器对应名称(步骤六中创建的 Publish Over SSH 服务信息) --> 高级-Transfers --> Source files(对应工作空间中打包后文件) ：target/easytools-1.0.0.jar(特定文件)/target/※.jar(模糊匹配)  --> Remove prefix(去除前缀) --> target/(只传输对应的文件不包含目录) --> Remote directory(jar包上传路径) --> Exec command (额外命令)
+---> 高级-Exec timeout (ms) ：600000 (过短可能会因为上传等导致ssh连接响应超时，可适当加大) --> save
+
+>Exec command 样例
+```bash
+APP_NAME="easytools"              # 应用名称，按你的项目名修改
+JAR_NAME="easytools-1.0.0.jar"    # 构建出来的JAR文件名，按实际修改
+DEPLOY_DIR="/opt/app"                    # 应用部署目录
+BACKUP_DIR="/opt/app-backup"             # 备份目录
+LOG_DIR="/opt/app/logs"                  # 日志目录
+JVM_OPTS="-Xms512m -Xmx2g "  # JVM参数
+
+# 1. 创建目录
+mkdir -p $DEPLOY_DIR $BACKUP_DIR $LOG_DIR
+
+# 2. 备份旧版本（如果存在）
+if [ -f $DEPLOY_DIR/$JAR_NAME ]; then
+    BACKUP_FILE="$BACKUP_DIR/${JAR_NAME%.*}_$(date +%Y%m%d_%H%M%S).jar.bak"
+    cp $DEPLOY_DIR/$JAR_NAME $BACKUP_FILE
+    echo "旧版本已备份到: $BACKUP_FILE"
+fi
+```
+
+> **进阶使用:Pipeline(流水线)版本**
+
+1.背景说明
+前面的方式是通过Jenkins的Web界面一步步配置的，这种方式简单直观，但有个缺点：配置信息只存在Jenkins里，别人看不到你的部署流程是怎样的。Pipeline（流水线）方式则是把整个部署流程写在一个叫 `Jenkinsfile` 的文件里，放在项目代码仓库中，团队成员都能看到，也方便修改和版本管理。
+
+2.什么是Pipeline？
+Pipeline是使用代码定义整个部署流程的方式。在项目根目录创建一个 `Jenkinsfile` 文件，把构建步骤用代码写出来，Jenkins会自动读取并执行。生产环境推荐使用这种方式。
+
+3. 操作步骤
+
+【1】 在项目根目录创建 Jenkinsfile
+
+在你的Java项目根目录下新建一个文件，命名为 `Jenkinsfile`，内容如下：
+
+```groovy
+pipeline {
+    agent any
+    tools {
+        maven 'Maven3'        // 名称需与全局工具配置中一致
+        jdk 'JDK17'
+    }
+    environment {
+        APP_NAME = 'my-app'
+        JAR_NAME = 'my-app-0.0.1-SNAPSHOT.jar'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '====== 第一步：从Git拉取代码 ======'
+                checkout scm
+            }
+        }
+        stage('Build') {
+            steps {
+                echo '====== 第二步：Maven编译打包 ======'
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo '====== 第三步：部署到远程服务器 ======'
+                sshPublisher(
+                    publishers: [
+                        sshPublisherDesc(
+                            configName: 'prod-server',
+                            transfers: [
+                                sshTransfer(
+                                    sourceFiles: "target/${JAR_NAME}",
+                                    removePrefix: 'target/',
+                                    remoteDirectory: 'app',
+                                    execCommand: '''
+                                        # 完整部署脚本（同上方的Shell脚本）
+                                        APP_NAME="my-app"
+                                        JAR_NAME="my-app-0.0.1-SNAPSHOT.jar"
+                                        # ... 省略，参考上方完整Shell脚本 ...
+                                    '''
+                                )
+                            ]
+                        )
+                    ]
+                )
+            }
+        }
+    }
+    post {
+        success {
+            echo '====== ✅ 部署成功！ ======'
+        }
+        failure {
+            echo '====== ❌ 部署失败，请查看日志 ======'
+        }
+    }
+}
+```
 
 
+【2】在Jenkins中创建Pipeline任务
 
+-   新建任务 → 选择「Pipeline」类型
+-   在「Pipeline」配置区域 → Definition选择「Pipeline script from SCM」
+-   SCM选择「Git」→ 填入仓库地址和分支
+-   「Script Path」保持默认的 `Jenkinsfile`
+-   保存 → 点击「Build Now」
 
-
-
-
-
-
-
-
-
+这种方式的好处是：**部署流程和代码放在一起，团队共享，可版本管理**。
 
 
 
