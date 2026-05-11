@@ -24544,12 +24544,15 @@ exit  # 退出服务器
 ```bash
 # 测试是否能免密码登录目标服务器（默认端口:22、默认密钥生成目录）
 ssh root@目标服务器IP
+```
 
+```bash
 # 特定端口+指定密钥地址
 ssh -p 10022 -i /custom_keys/my_key root@目标服务器IP
 
 # 如果成功登录，说明SSH密钥配置正确
 exit  # 退出SSH连接
+
 ```
 
 4. 在 Jenkins 中配置 Publish Over SSH 插件
