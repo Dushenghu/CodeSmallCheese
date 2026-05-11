@@ -24462,7 +24462,8 @@ pause
 作用:配置Jenkins的JDK、Maven、Git
 
 1.  进入「系统管理」→「Global Tool Configuration」
-2.
+
+2. 相关配置
 #### Jdk配置
 【别名】： 自定义名称
 【JAVA_HOME】： jdk安装目录
